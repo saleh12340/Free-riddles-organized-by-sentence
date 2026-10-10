@@ -11,6 +11,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import com.example.ui.util.toEnglishDigits
+import com.example.ui.util.formatQuantity
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -442,7 +444,7 @@ fun InteractiveReceiptView(
                     )
                     // 2. العدد
                     DataCell(
-                        value = row.rightQuantityStr.toEnglishDigits(),
+                        value = formatQuantity(row.rightQuantityStr),
                         onValueChange = { onUpdateRightQuantity(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
                         weight = 0.45f,
@@ -490,7 +492,7 @@ fun InteractiveReceiptView(
                     )
                     // 2. العدد
                     DataCell(
-                        value = row.leftQuantityStr.toEnglishDigits(),
+                        value = formatQuantity(row.leftQuantityStr),
                         onValueChange = { onUpdateLeftQuantity(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
                         weight = 0.45f,

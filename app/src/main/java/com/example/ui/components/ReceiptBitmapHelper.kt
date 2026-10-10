@@ -9,6 +9,7 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 import com.example.ui.util.toEnglishDigits
+import com.example.ui.util.formatQuantity
 
 object ReceiptBitmapHelper {
 
@@ -222,7 +223,7 @@ object ReceiptBitmapHelper {
 
             rowDescPaint.textAlign = Paint.Align.CENTER
             if (row.rightQuantityStr.isNotBlank()) {
-                canvas.drawText(row.rightQuantityStr.toEnglishDigits(), rightStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(formatQuantity(row.rightQuantityStr), rightStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT
@@ -247,7 +248,7 @@ object ReceiptBitmapHelper {
 
             rowDescPaint.textAlign = Paint.Align.CENTER
             if (row.leftQuantityStr.isNotBlank()) {
-                canvas.drawText(row.leftQuantityStr.toEnglishDigits(), leftStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(formatQuantity(row.leftQuantityStr), leftStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT

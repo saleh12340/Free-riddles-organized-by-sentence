@@ -35,7 +35,6 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
     val config by viewModel.storeConfig.collectAsState()
     var query by remember { mutableStateOf("") }
     var selectedCustomer by remember { mutableStateOf<String?>(null) }
-    var showAddReceiptDialog by remember { mutableStateOf(false) }
 
     val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
@@ -97,7 +96,6 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
                     val list = triple.second
                     val netBalance = triple.third
                     val receiptsList = allReceipts.filter { it.customerName.trim() == name }
-                    val totalInvoices = list.sumOf { it.invoice.grandTotal }
 
                     NeuCard(
                         modifier = Modifier
@@ -135,10 +133,17 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
         }
     }
 
-    // Customer Detail & Payment Receipts Dialog
+    // Customer Detail & Quick Payment Input at Top (صيغة الفاتورة وعمليات العميل)
     selectedCustomer?.let { name ->
-        val customerInvoices = invoices.filter { it.invoice.customerName.trim() == name }.sortedByDescending { it.invoice.invoiceId }
-        val customerReceipts = allReceipts.filter { it.customerName.trim() == name }
+        val customerInvoices = invoices.filter { it.invoice.customerName.trim() == name }.sortedBy { it.invoice.invoiceId }
+        val customerReceipts = allReceipts.filter { it.customerName.trim() == name }.sortedBy { it.receiptId }
+
+        var amountStr by remember { mutableStateOf("") }
+        var paymentTypeChoice by remember { mutableStateOf("سند قبض نقدي") }
+        var receiptNotes by remember { mutableStateOf("") }
+
+        val paymentTypes = listOf("سند قبض نقدي", "تسديد جزئي للفاتورة", "تسديد الفاتورة كاملة", "تسديد جزئي من حساب العميل")
+
         val totalInvoices = customerInvoices.sumOf { it.invoice.grandTotal }
         val totalReceipts = customerReceipts.sumOf { it.amount }
         val remainingBalance = totalInvoices - totalReceipts
@@ -148,7 +153,7 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
             containerColor = NeuSurface,
             title = {
                 Column {
-                    Text("حساب وفواتير العميل: $name", fontWeight = FontWeight.Black, fontSize = 16.sp, color = NeuTextPrimary)
+                    Text("حساب العميل: $name", fontWeight = FontWeight.Black, fontSize = 16.sp, color = NeuTextPrimary)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "إجمالي الفواتير: ${formatter.format(totalInvoices)} | المدفوع: ${formatter.format(totalReceipts)} | المتبقي: ${formatter.format(remainingBalance)}",
@@ -161,78 +166,191 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 450.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .heightIn(max = 500.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Button to add payment receipt / settlement
-                    NeuButton(
-                        onClick = { showAddReceiptDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        isPrimary = true
+                    // --- TOP QUICK INPUT ROW FOR RECEIPT / PAYMENT (في أعلى الصفحة في صف واحد مع زر الإضافة بصيغة الفاتورة) ---
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = NeuInsetBg,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                        Spacer(Modifier.width(6.dp))
-                        Text("إضافة سند قبض / تسديد حساب أو فاتورة", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-
-                    Text("سندات القبض وتسديدات الحساب:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeuTextPrimary)
-                    
-                    if (customerReceipts.isEmpty()) {
-                        Text("لا توجد سندات قبض مسجلة لهذا العميل حتى الآن.", fontSize = 11.5.sp, color = NeuTextMuted)
-                    } else {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.heightIn(max = 140.dp)
+                        Column(
+                            Modifier.fillMaxWidth().padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            items(customerReceipts, key = { it.receiptId }) { receipt ->
-                                Surface(shape = RoundedCornerShape(10.dp), color = NeuInsetBg, modifier = Modifier.fillMaxWidth()) {
-                                    Row(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(10.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text(receipt.paymentType, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = NeuSuccess)
-                                            Text("${receipt.dateString} ${if (receipt.notes.isNotBlank()) "• ${receipt.notes}" else ""}", fontSize = 10.sp, color = NeuTextSecondary)
+                            Text("إضافة سند قبض / صرف سريع:", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                paymentTypes.take(2).forEach { type ->
+                                    FilterChip(
+                                        selected = paymentTypeChoice == type,
+                                        onClick = { paymentTypeChoice = type },
+                                        label = { Text(type, fontSize = 10.sp) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Amount Input
+                                NeuInsetBox(modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp)) {
+                                    TextField(
+                                        value = amountStr,
+                                        onValueChange = { amountStr = it.toEnglishDigits() },
+                                        placeholder = { Text("المبلغ", fontSize = 11.sp) },
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // Notes Input
+                                NeuInsetBox(modifier = Modifier.weight(1.2f), shape = RoundedCornerShape(8.dp)) {
+                                    TextField(
+                                        value = receiptNotes,
+                                        onValueChange = { receiptNotes = it },
+                                        placeholder = { Text("التفاصيل / ملاحظات", fontSize = 11.sp) },
+                                        singleLine = true,
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // Add Button in the same row
+                                NeuButton(
+                                    onClick = {
+                                        val amt = amountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+                                        if (amt > 0) {
+                                            viewModel.addCustomerReceipt(name, amt, paymentTypeChoice, receiptNotes)
+                                            amountStr = ""
+                                            receiptNotes = ""
                                         }
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text("${formatter.format(receipt.amount)} ${config?.currencySymbol ?: "ر.ي"}", fontWeight = FontWeight.Black, fontSize = 13.sp, color = NeuTextPrimary)
-                                            Spacer(Modifier.width(6.dp))
-                                            IconButton(onClick = { viewModel.deleteCustomerReceipt(receipt.receiptId) }, modifier = Modifier.size(24.dp)) {
-                                                Icon(Icons.Default.Delete, contentDescription = "حذف", tint = NeuError, modifier = Modifier.size(14.dp))
-                                            }
-                                        }
+                                    },
+                                    modifier = Modifier.width(75.dp).height(42.dp),
+                                    isPrimary = true
+                                ) {
+                                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
                         }
                     }
 
-                    Spacer(Modifier.height(4.dp))
-                    Text("فواتير العميل المسجلة:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeuTextPrimary)
+                    Spacer(Modifier.height(2.dp))
+                    Text("سجل العمليات (فواتير وسندات):", fontWeight = FontWeight.Bold, fontSize = 12.5.sp, color = NeuTextPrimary)
 
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.heightIn(max = 180.dp)
-                    ) {
-                        items(customerInvoices, key = { it.invoice.invoiceId }) { item ->
-                            Surface(shape = RoundedCornerShape(10.dp), color = NeuInsetBg, modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(10.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("#${item.invoice.invoiceNumber.toEnglishString()}", fontWeight = FontWeight.Bold, color = NeuAccentBlue, fontSize = 12.sp)
-                                        Text("${item.invoice.dateString} (${item.invoice.paymentType})", fontSize = 10.sp, color = NeuTextSecondary)
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("${formatter.format(item.invoice.grandTotal)} ${config?.currencySymbol ?: "ر.ي"}", fontWeight = FontWeight.Bold, color = NeuTextPrimary, fontSize = 13.sp)
-                                        Text("${item.items.size.toEnglishString()} أصناف", fontSize = 10.sp, color = NeuTextSecondary)
+                    // --- COMPACT TRANSACTIONS LIST WITH RUNNING BALANCE (عرض العمليات بصيغة الصندوق بشكل مصغر ومرتب مع الرصيد التراكمي والتاريخ والتفاصيل) ---
+                    val combinedTransactions = remember(customerInvoices, customerReceipts) {
+                        val txs = mutableListOf<CustomerTx>()
+                        customerInvoices.forEach { inv ->
+                            txs.add(
+                                CustomerTx(
+                                    date = inv.invoice.dateString,
+                                    title = "فاتورة #${inv.invoice.invoiceNumber.toEnglishString()} (${inv.invoice.paymentType})",
+                                    details = "${inv.items.size.toEnglishString()} أصناف",
+                                    amount = inv.invoice.grandTotal,
+                                    isDebit = true,
+                                    id = inv.invoice.invoiceId,
+                                    rawType = "invoice"
+                                )
+                            )
+                        }
+                        customerReceipts.forEach { rec ->
+                            txs.add(
+                                CustomerTx(
+                                    date = rec.dateString,
+                                    title = rec.paymentType,
+                                    details = rec.notes.ifEmpty { "سند قبض / تسديد" },
+                                    amount = rec.amount,
+                                    isDebit = false,
+                                    id = rec.receiptId,
+                                    rawType = "receipt"
+                                )
+                            )
+                        }
+                        txs.sortedBy { it.id }
+                    }
+
+                    if (combinedTransactions.isEmpty()) {
+                        Text("لا توجد عمليات مسجلة لهذا العميل.", fontSize = 11.sp, color = NeuTextMuted)
+                    } else {
+                        var runningBalance = 0.0
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.heightIn(max = 260.dp)
+                        ) {
+                            items(combinedTransactions, key = { "${it.rawType}_${it.id}" }) { tx ->
+                                if (tx.isDebit) {
+                                    runningBalance += tx.amount
+                                } else {
+                                    runningBalance -= tx.amount
+                                }
+                                val currentRunBal = runningBalance
+
+                                Surface(shape = RoundedCornerShape(10.dp), color = NeuInsetBg, modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = if (tx.isDebit) "مدين (+)" else "دائن (-)",
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (tx.isDebit) NeuAccentBlue else NeuSuccess
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(tx.title, fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = NeuTextPrimary)
+                                            }
+                                            Text("${tx.date} • ${tx.details}", fontSize = 10.sp, color = NeuTextSecondary)
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text(
+                                                "${formatter.format(tx.amount)} ${config?.currencySymbol ?: "ر.ي"}",
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 12.sp,
+                                                color = if (tx.isDebit) NeuTextPrimary else NeuSuccess
+                                            )
+                                            Text(
+                                                "التراكمي: ${formatter.format(currentRunBal)}",
+                                                fontSize = 9.sp,
+                                                color = NeuTextSecondary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        if (!tx.isDebit) {
+                                            Spacer(Modifier.width(4.dp))
+                                            IconButton(
+                                                onClick = { viewModel.deleteCustomerReceipt(tx.id) },
+                                                modifier = Modifier.size(22.dp)
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "حذف", tint = NeuError, modifier = Modifier.size(13.dp))
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -247,107 +365,14 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
             }
         )
     }
-
-    // Add Receipt / Settlement Dialog
-    if (showAddReceiptDialog && selectedCustomer != null) {
-        val custName = selectedCustomer!!
-        var amountStr by remember { mutableStateOf("") }
-        var paymentTypeChoice by remember { mutableStateOf("سند قبض نقدي") }
-        var receiptNotes by remember { mutableStateOf("") }
-
-        val paymentTypes = listOf("سند قبض نقدي", "تسديد جزئي للفاتورة", "تسديد الفاتورة كاملة", "تسديد جزئي من حساب العميل")
-
-        AlertDialog(
-            onDismissRequest = { showAddReceiptDialog = false },
-            containerColor = NeuSurface,
-            title = {
-                Text("إضافة سند قبض / تسديد للعميل: $custName", fontWeight = FontWeight.Black, fontSize = 15.sp, color = NeuTextPrimary)
-            },
-            text = {
-                Column(
-                    Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text("اختر نوع سند القبض أو التسديد:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextSecondary)
-                    
-                    paymentTypes.forEach { type ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { paymentTypeChoice = type }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (paymentTypeChoice == type),
-                                onClick = { paymentTypeChoice = type }
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(type, fontSize = 13.sp, color = NeuTextPrimary, fontWeight = FontWeight.Medium)
-                        }
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("مبلغ القبض / التسديد:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextSecondary)
-                    
-                    NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                        TextField(
-                            value = amountStr,
-                            onValueChange = { amountStr = it.toEnglishDigits() },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("أدخل المبلغ (مثال: 5000)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("ملاحظات إضافية (اختياري):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextSecondary)
-                    
-                    NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                        TextField(
-                            value = receiptNotes,
-                            onValueChange = { receiptNotes = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("ملاحظات سند القبض...") },
-                            singleLine = true,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                // Full-width Add Button spanning the bottom
-                NeuButton(
-                    onClick = {
-                        val amt = amountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
-                        if (amt > 0) {
-                            viewModel.addCustomerReceipt(custName, amt, paymentTypeChoice, receiptNotes)
-                            showAddReceiptDialog = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    isPrimary = true
-                ) {
-                    Text("حفظ وتأكيد سند القبض", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddReceiptDialog = false }) {
-                    Text("إلغاء", color = NeuTextSecondary)
-                }
-            }
-        )
-    }
 }
+
+data class CustomerTx(
+    val date: String,
+    val title: String,
+    val details: String,
+    val amount: Double,
+    val isDebit: Boolean,
+    val id: Long,
+    val rawType: String
+)

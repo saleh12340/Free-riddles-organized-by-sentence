@@ -37,3 +37,14 @@ fun Double.formatEnglish(pattern: String = "#,##0.##"): String {
 fun Number.toEnglishString(): String {
     return this.toString().toEnglishDigits()
 }
+
+fun formatQuantity(s: String): String {
+    val clean = s.toEnglishDigits()
+    val d = clean.toDoubleOrNull() ?: return s
+    return if (d == d.toLong().toDouble()) {
+        d.toLong().toString()
+    } else {
+        d.toString()
+    }
+}
+
