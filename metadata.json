@@ -1,0 +1,6 @@
+{
+  "name": "فاتورتي - مصمم الفواتير والطباعة",
+  "description": "تطبيق إنشاء وطباعة الفواتير الحرارية وحفظها كصورة وحساب الإجمالي تلقائياً",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
