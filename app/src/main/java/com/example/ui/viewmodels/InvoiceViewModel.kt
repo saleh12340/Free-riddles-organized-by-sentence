@@ -82,6 +82,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     var customerName by mutableStateOf("")
     var paymentType by mutableStateOf("نقداً") // "نقداً" or "أجل"
     var notes by mutableStateOf("")
+    var discountAmountStr by mutableStateOf("")
 
     // Smart expanding dual-column rows: Starts with DEFAULT_ROW_COUNT
     val dualRows = mutableStateListOf<DualReceiptRow>()
@@ -117,6 +118,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             customerName = ""
             paymentType = "نقداً"
             notes = ""
+            discountAmountStr = ""
             dualRows.clear()
             repeat(DEFAULT_ROW_COUNT) {
                 dualRows.add(DualReceiptRow())
@@ -197,7 +199,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun calculateRightSubtotal(): Double = dualRows.sumOf { it.rightTotal }
     fun calculateLeftSubtotal(): Double = dualRows.sumOf { it.leftTotal }
-    fun calculateGrandTotal(): Double = calculateRightSubtotal() + calculateLeftSubtotal()
+    fun calculateSubtotal(): Double = calculateRightSubtotal() + calculateLeftSubtotal()
+    fun getDiscountAmount(): Double = discountAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+    fun calculateGrandTotal(): Double = (calculateSubtotal() - getDiscountAmount()).coerceAtLeast(0.0)
 
     fun saveInvoiceToDatabase(onSuccess: (Long) -> Unit = {}) {
         viewModelScope.launch {
@@ -244,6 +248,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             }
 
             try {
+                val subtotal = calculateSubtotal()
+                val discount = getDiscountAmount()
                 val grandTotal = calculateGrandTotal()
                 val currentInvoiceNum = invoiceNumber
                 val invoiceEntity = InvoiceEntity(
@@ -251,7 +257,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                     dateString = dateString,
                     customerName = customerName,
                     paymentType = paymentType,
-                    subtotal = grandTotal,
+                    subtotal = subtotal,
+                    discount = discount,
                     grandTotal = grandTotal,
                     notes = notes
                 )
@@ -259,9 +266,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 val savedId = repository.saveInvoice(invoiceEntity, itemsToSave)
                 _uiEventMessage.value = "تم حفظ الفاتورة بنجاح برقم #$currentInvoiceNum وحفظها في السجل!"
 
-                // Advance to next invoice number and prepare fresh 6 rows
+                // Advance to next invoice number and prepare fresh rows
                 invoiceNumber = repository.getNextInvoiceNumber()
                 customerName = ""
+                discountAmountStr = ""
                 dualRows.clear()
                 repeat(DEFAULT_ROW_COUNT) {
                     dualRows.add(DualReceiptRow())
@@ -281,6 +289,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         customerName = inv.customerName
         paymentType = inv.paymentType
         notes = inv.notes
+        discountAmountStr = if (inv.discount > 0) inv.discount.toString() else ""
 
         dualRows.clear()
         val allItems = invoiceWithItems.items
@@ -390,6 +399,26 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         return InvoicePdfHelper.getShareablePdfUri(getApplication(), file)
     }
 
+    fun getShareableCustomerStatementPdf(
+        customerName: String,
+        statementRows: List<InvoicePdfHelper.CustomerStatementRow>,
+        totalDebit: Double,
+        totalCredit: Double,
+        netBalance: Double
+    ): Uri? {
+        val config = storeConfig.value ?: StoreConfigEntity()
+        val file = InvoicePdfHelper.createCustomerStatementPdf(
+            context = getApplication(),
+            storeConfig = config,
+            customerName = customerName,
+            statementRows = statementRows,
+            totalDebit = totalDebit,
+            totalCredit = totalCredit,
+            netBalance = netBalance
+        ) ?: return null
+        return InvoicePdfHelper.getShareablePdfUri(getApplication(), file)
+    }
+
     fun addCatalogProductToInvoice(name: String, price: Double) {
         val priceStr = if (price > 0) price.toString() else ""
         
@@ -473,11 +502,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _uiEventMessage.value = "تمت إضافة الصنف $cleanName بنجاح!"
     }
 
-    fun addCatalogProduct(name: String, price: Double) {
+    fun addCatalogProduct(name: String, price: Double, category: String = "عام") {
         viewModelScope.launch {
             if (name.isNotBlank()) {
-                repository.saveProduct(ProductCatalogEntity(name = name, defaultUnitPrice = price))
-                _uiEventMessage.value = "تم إضافة الصنف إلى الدليل"
+                repository.saveProduct(ProductCatalogEntity(name = name, defaultUnitPrice = price, category = category))
+                _uiEventMessage.value = "تم إضافة الصنف إلى الدليل بنجاح"
             }
         }
     }

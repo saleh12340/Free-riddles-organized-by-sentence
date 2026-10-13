@@ -165,28 +165,75 @@ fun NewInvoiceScreen(
                 shape = RoundedCornerShape(22.dp),
                 contentPadding = PaddingValues(10.dp)
             ) {
-                // Grand Total Display (Sunken Neumorphic Box)
+                // Grand Total Display (Sunken Neumorphic Box with Discount field)
                 NeuInsetBox(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "المبلغ الإجمالي الكلي:",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = NeuTextSecondary
-                        )
-                        Text(
-                            text = "${formatter.format(viewModel.calculateGrandTotal())} ${storeConfig.currencySymbol}",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 18.sp,
-                            color = NeuAccentBlue
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "خصم:",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeuTextSecondary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Surface(
+                                modifier = Modifier
+                                    .width(68.dp)
+                                    .height(30.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                color = NeuSurfaceRaised
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    BasicTextField(
+                                        value = viewModel.discountAmountStr,
+                                        onValueChange = { viewModel.discountAmountStr = it.toEnglishDigits() },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = NeuError,
+                                            textAlign = TextAlign.Center
+                                        ),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                        cursorBrush = SolidColor(NeuAccentBlue),
+                                        decorationBox = { inner ->
+                                            if (viewModel.discountAmountStr.isEmpty()) {
+                                                Text("0.0", fontSize = 11.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
+                                            }
+                                            inner()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            if (viewModel.getDiscountAmount() > 0) {
+                                Text(
+                                    text = "قبل الخصم: ${formatter.format(viewModel.calculateSubtotal())}",
+                                    fontSize = 10.sp,
+                                    color = NeuTextSecondary
+                                )
+                            }
+                            Text(
+                                text = "${formatter.format(viewModel.calculateGrandTotal())} ${storeConfig.currencySymbol}",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.5.sp,
+                                color = NeuAccentBlue
+                            )
+                        }
                     }
                 }
 

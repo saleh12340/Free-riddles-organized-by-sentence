@@ -30,13 +30,17 @@ import com.example.ui.screens.*
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+
 enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector) {
     NEW_INVOICE("جديدة", AppIcons.Receipt, AppIcons.Receipt),
     HISTORY("السجل", AppIcons.History, AppIcons.History),
     PRODUCTS("الأصناف", AppIcons.Category, AppIcons.Category),
-    CUSTOMERS("العملاء", AppIcons.Store, AppIcons.Store),
+    CUSTOMERS("العملاء", Icons.Default.Person, Icons.Default.Person),
     PRINTER("الطابعة", AppIcons.Print, AppIcons.Print),
-    SETTINGS("المتجر", AppIcons.Store, AppIcons.Store)
+    SETTINGS("المتجر", Icons.Default.Settings, Icons.Default.Settings)
 }
 
 class MainActivity : ComponentActivity() {
@@ -90,7 +94,8 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
                     .shadow(
                         elevation = 10.dp,
                         shape = RoundedCornerShape(26.dp),

@@ -48,22 +48,41 @@ fun InvoiceHistoryScreen(
     val printerState by viewModel.printerState.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
+    var selectedPeriodFilter by remember { mutableStateOf("الكل") } // "الكل", "اليوم", "هذا الأسبوع", "هذا الشهر", "نقداً", "أجل"
     var selectedInvoiceForDetail by remember { mutableStateOf<InvoiceWithItems?>(null) }
 
     val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
+    val todayDateStr = remember { java.text.SimpleDateFormat("yyyy/MM/dd", Locale.US).format(java.util.Date()) }
 
-    val filteredList = remember(invoicesWithItems, searchQuery) {
-        if (searchQuery.isBlank()) invoicesWithItems
-        else invoicesWithItems.filter {
-            it.invoice.customerName.contains(searchQuery, ignoreCase = true) ||
-            it.invoice.invoiceNumber.toString().contains(searchQuery) ||
-            it.invoice.paymentType.contains(searchQuery)
+    val filteredList = remember(invoicesWithItems, searchQuery, selectedPeriodFilter) {
+        val now = System.currentTimeMillis()
+        val oneWeekMillis = 7L * 24 * 3600 * 1000
+        val oneMonthMillis = 30L * 24 * 3600 * 1000
+
+        invoicesWithItems.filter { item ->
+            val inv = item.invoice
+            val matchesQuery = if (searchQuery.isBlank()) true else {
+                inv.customerName.contains(searchQuery, ignoreCase = true) ||
+                inv.invoiceNumber.toString().contains(searchQuery) ||
+                inv.paymentType.contains(searchQuery)
+            }
+
+            val matchesFilter = when (selectedPeriodFilter) {
+                "اليوم" -> inv.dateString == todayDateStr || (now - inv.createdAtTimestamp < 24 * 3600 * 1000)
+                "هذا الأسبوع" -> (now - inv.createdAtTimestamp) <= oneWeekMillis
+                "هذا الشهر" -> (now - inv.createdAtTimestamp) <= oneMonthMillis
+                "نقداً" -> inv.paymentType.contains("نقداً")
+                "أجل" -> inv.paymentType.contains("أجل")
+                else -> true
+            }
+
+            matchesQuery && matchesFilter
         }
     }
 
-    val totalSalesSum = remember(filteredList) {
-        filteredList.sumOf { it.invoice.grandTotal }
-    }
+    val totalSalesSum = remember(filteredList) { filteredList.sumOf { it.invoice.grandTotal } }
+    val totalCashSum = remember(filteredList) { filteredList.filter { it.invoice.paymentType.contains("نقداً") }.sumOf { it.invoice.grandTotal } }
+    val totalCreditSum = remember(filteredList) { filteredList.filter { it.invoice.paymentType.contains("أجل") }.sumOf { it.invoice.grandTotal } }
 
     Scaffold(
         containerColor = NeuBackground,
@@ -131,43 +150,119 @@ fun InvoiceHistoryScreen(
                 }
             }
 
-            // Stats Neumorphic Card
+            // Filter Chips Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                listOf("الكل", "اليوم", "هذا الأسبوع", "هذا الشهر", "نقداً", "أجل").forEach { filterName ->
+                    FilterChip(
+                        selected = selectedPeriodFilter == filterName,
+                        onClick = { selectedPeriodFilter = filterName },
+                        label = { Text(filterName, fontSize = 10.sp, fontWeight = if (selectedPeriodFilter == filterName) FontWeight.Bold else FontWeight.Normal) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Stats KPI Dashboard
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                contentPadding = PaddingValues(12.dp)
+                contentPadding = PaddingValues(10.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = "عدد الفواتير:",
-                            fontSize = 11.5.sp,
-                            color = NeuTextSecondary
-                        )
-                        Text(
-                            text = "${filteredList.size} فاتورة",
+                            text = "ملخص المبيعات ($selectedPeriodFilter):",
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
                             color = NeuTextPrimary
                         )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = NeuInsetBg
+                        ) {
+                            Text(
+                                text = "${filteredList.size} فاتورة",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeuAccentBlue
+                            )
+                        }
                     }
 
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "إجمالي المبيعات:",
-                            fontSize = 11.5.sp,
-                            color = NeuTextSecondary
-                        )
-                        Text(
-                            text = "${formatter.format(totalSalesSum)} ${storeConfig.currencySymbol}",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 17.sp,
-                            color = NeuAccentBlue
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Total Card
+                        Surface(
+                            modifier = Modifier.weight(1.2f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = NeuInsetBg
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("الإجمالي الكلي", fontSize = 10.sp, color = NeuTextSecondary)
+                                Text(
+                                    "${formatter.format(totalSalesSum)} ${storeConfig.currencySymbol}",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = NeuAccentBlue
+                                )
+                            }
+                        }
+
+                        // Cash Card
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = NeuInsetBg
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("نقداً", fontSize = 10.sp, color = NeuTextSecondary)
+                                Text(
+                                    formatter.format(totalCashSum),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeuSuccess
+                                )
+                            }
+                        }
+
+                        // Credit Card
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = NeuInsetBg
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("آجل", fontSize = 10.sp, color = NeuTextSecondary)
+                                Text(
+                                    formatter.format(totalCreditSum),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeuError
+                                )
+                            }
+                        }
                     }
                 }
             }
