@@ -34,7 +34,10 @@ import com.example.ui.util.toEnglishString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomersScreen(viewModel: InvoiceViewModel) {
+fun CustomersScreen(
+    viewModel: InvoiceViewModel,
+    onNavigateToCustomerStatement: ((String) -> Unit)? = null
+) {
     val context = LocalContext.current
     val invoices by viewModel.allInvoices.collectAsState()
     val allReceipts by viewModel.allReceipts.collectAsState()
@@ -42,6 +45,16 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
     var query by remember { mutableStateOf("") }
     var selectedCustomer by remember { mutableStateOf<String?>(null) }
     var showAddCustomerDialog by remember { mutableStateOf(false) }
+
+    // If a customer is selected, open the dedicated full screen statement
+    selectedCustomer?.let { customerName ->
+        CustomerAccountStatementScreen(
+            customerName = customerName,
+            viewModel = viewModel,
+            onBack = { selectedCustomer = null }
+        )
+        return
+    }
 
     val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 

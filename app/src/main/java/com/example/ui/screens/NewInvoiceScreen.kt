@@ -58,6 +58,7 @@ fun NewInvoiceScreen(
 
     var showProductPickerSheet by remember { mutableStateOf(false) }
     var showPreviewDialog by remember { mutableStateOf(false) }
+    var showClearInvoiceDialog by remember { mutableStateOf(false) }
 
     val formatter = DecimalFormat("#,##0.##")
     val customerSuggestions = remember(allInvoices, viewModel.customerName) {
@@ -140,14 +141,20 @@ fun NewInvoiceScreen(
                             }
                         }
 
-                        // 3. Reset Form
+                        // 3. New Clean Operation / Reset Form (نظافة عملية جديدة)
                         NeuCircleButton(
-                            onClick = { viewModel.resetForm() },
+                            onClick = {
+                                if (viewModel.dualRows.any { it.hasRightData || it.hasLeftData } || viewModel.customerName.isNotBlank()) {
+                                    showClearInvoiceDialog = true
+                                } else {
+                                    viewModel.resetForm()
+                                }
+                            },
                             size = 28.dp
                         ) {
                             Icon(
                                 Icons.Default.Refresh,
-                                contentDescription = "فاتورة جديدة",
+                                contentDescription = "عملية جديدة / تصفير",
                                 tint = NeuTextPrimary,
                                 modifier = Modifier.size(14.dp)
                             )
@@ -620,6 +627,45 @@ fun NewInvoiceScreen(
                         onAddManualRow = {},
                         isEditable = false
                     )
+                }
+            }
+        )
+    }
+
+    // Dialog for "نظافة عملية جديدة" (Clear current invoice and start clean new operation)
+    if (showClearInvoiceDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearInvoiceDialog = false },
+            containerColor = NeuSurface,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("بدء عملية جديدة (تصفير الفاتورة)", fontWeight = FontWeight.Black, fontSize = 15.sp, color = NeuTextPrimary)
+                }
+            },
+            text = {
+                Text(
+                    "هل ترغب في تنظيف وتصفير بنود الفاتورة الحالية والبدء بعملية بيع جديدة نظيفة؟",
+                    fontSize = 13.sp,
+                    color = NeuTextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.resetForm()
+                        showClearInvoiceDialog = false
+                        Toast.makeText(context, "تم تجهيز فاتورة جديدة نظيفة", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeuAccentBlue)
+                ) {
+                    Text("نعم، عملية جديدة", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showClearInvoiceDialog = false }) {
+                    Text("إلغاء", color = NeuTextPrimary)
                 }
             }
         )
