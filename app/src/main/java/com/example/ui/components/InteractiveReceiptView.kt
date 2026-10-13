@@ -419,7 +419,6 @@ fun InteractiveReceiptView(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(30.dp)
                         .padding(vertical = 1.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .border(
@@ -664,8 +663,8 @@ private fun RowScope.DataCell(
     Box(
         modifier = Modifier
             .weight(weight)
-            .height(if (subBadge != null) 34.dp else 28.dp)
-            .padding(horizontal = 0.5.dp)
+            .heightIn(min = 28.dp)
+            .padding(horizontal = 0.5.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(5.dp))
             .background(
                 if (isFocused) Color(0xFFEFF6FF)
@@ -677,7 +676,7 @@ private fun RowScope.DataCell(
                 color = if (isFocused) ReceiptInkBlueAccent else Color(0xFFE2E8F0),
                 shape = RoundedCornerShape(5.dp)
             )
-            .padding(horizontal = 2.dp),
+            .padding(horizontal = 2.dp, vertical = 3.dp),
         contentAlignment = when (align) {
             TextAlign.Start -> Alignment.CenterStart
             TextAlign.End -> Alignment.CenterEnd

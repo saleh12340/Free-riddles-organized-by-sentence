@@ -1,0 +1,6 @@
+{
+  "summary": "Implementation plan to fix data truncation and disappearance in InteractiveReceiptView by removing fixed row height (30.dp) and DataCell height, enabling flexible wrap-content / dynamic height for invoice rows, allowing multi-line text for descriptions and numbers, and optimizing weights.",
+  "updatedAt": "2026-10-13T18:29:27.371929079Z",
+  "requestFeedback": true,
+  "userFacing": true
+}
