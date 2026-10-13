@@ -129,19 +129,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private fun checkAutoExpand(editedIndex: Int) {
         if (editedIndex !in dualRows.indices) return
         val row = dualRows[editedIndex]
-        val rightComplete = row.rightDescription.isNotBlank() && row.rightTotalAmountStr.isNotBlank()
-        val leftComplete = row.leftDescription.isNotBlank() && row.leftTotalAmountStr.isNotBlank()
+        val rowComplete = row.rightDescription.isNotBlank() && row.rightTotalAmountStr.isNotBlank()
 
-        // Smart flow: finish the right cell first, then move to the left cell
-        // of the same visual row. Only after the left cell is complete do we
-        // create the next row and continue from the right side.
-        if (editedIndex == dualRows.lastIndex && leftComplete) {
+        // Automatically add a new row when the user completes the last row
+        if (editedIndex == dualRows.lastIndex && rowComplete) {
             dualRows.add(DualReceiptRow())
-        } else if (rightComplete && !row.hasLeftData) {
-            // Keep this row open for the left-side entry; do not create a
-            // second right-side row prematurely.
-        } else if (editedIndex == dualRows.lastIndex && row.hasRightData && !row.hasLeftData) {
-            // Waiting for the left side is intentional.
         }
     }
 
