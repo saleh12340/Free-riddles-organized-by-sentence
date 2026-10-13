@@ -699,14 +699,14 @@ private fun RowScope.DataCell(
                     onValueChange = onValueChange,
                     onFocusChange = { isFocused = it },
                     textStyle = TextStyle(
-                        fontSize = 10.5.sp,
+                        fontSize = 10.sp,
                         fontWeight = if (isFocused) FontWeight.Bold else fontWeight,
                         color = if (isFocused) ReceiptInkBlueAccent else textColor,
                         textAlign = align
                     ),
                     keyboardOptions = if (isNumeric) KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
                                       else KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                    singleLine = true,
+                    singleLine = !isNumeric,
                     placeholder = placeholder,
                     textAlign = align,
                     focusRequester = focusRequester,
@@ -715,11 +715,11 @@ private fun RowScope.DataCell(
             } else {
                 Text(
                     text = value,
-                    fontSize = 10.5.sp,
+                    fontSize = 10.sp,
                     fontWeight = fontWeight,
                     color = textColor,
                     textAlign = align,
-                    maxLines = 1,
+                    maxLines = if (isNumeric) 1 else 3,
                     overflow = TextOverflow.Ellipsis
                 )
             }
