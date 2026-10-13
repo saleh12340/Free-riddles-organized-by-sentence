@@ -26,21 +26,21 @@ import androidx.compose.ui.unit.sp
 // ============================================================================
 // NEUMORPHIC COLOR PALETTE (From user's Soft UI screenshot: #0072ff, rgba(163,177,198,.65), etc.)
 // ============================================================================
-val NeuBackground = Color(0xFFE6EDF5)        // Master canvas soft cool gray
-val NeuSurface = Color(0xFFEBF1F8)           // Raised surface color
-val NeuSurfaceRaised = Color(0xFFEEF4FA)     // Slightly lighter elevated surface
-val NeuDarkShadow = Color(0xFFA3B1C6)        // Exact rgb(163, 177, 198) from user screenshot
-val NeuLightHighlight = Color(0xFFFFFFFF)    // Exact rgb(255, 255, 255) from user screenshot
-val NeuInsetBg = Color(0xFFDEE5F0)           // Sunken debossed input background
-val NeuInsetBorder = Color(0xFFCBD5E1)       // Sunken input border
+val NeuBackground = Color.White        // Solid white background for all screens
+val NeuSurface = Color(0xFF1E293B)           // Opaque dark card background (Slate 800)
+val NeuSurfaceRaised = Color(0xFF0F172A)     // Opaque dark surface / header (Slate 900)
+val NeuDarkShadow = Color(0xFF0F172A)        // Dark shadow
+val NeuLightHighlight = Color(0xFF334155)    // Slate 700 highlight border
+val NeuInsetBg = Color(0xFF0F172A)           // Opaque dark input background
+val NeuInsetBorder = Color(0xFF334155)       // Sunken input border
 
-val NeuAccentBlue = Color(0xFF0072FF)        // Exact #0072ff from user screenshot CSS
-val NeuAccentBlueHover = Color(0xFF005ED4)   // Deep hover/pressed state
-val NeuAccentBlueGlow = Color(0x590072FF)    // rgba(0, 114, 255, 0.35) glow shadow
+val NeuAccentBlue = Color(0xFF38BDF8)        // Bright Cyan/Blue for dark cards contrast
+val NeuAccentBlueHover = Color(0xFF0284C7)   // Deep hover/pressed state
+val NeuAccentBlueGlow = Color(0x5938BDF8)    // Glow shadow
 
-val NeuTextPrimary = Color(0xFF1E293B)       // Slate dark primary text
-val NeuTextSecondary = Color(0xFF475569)     // Slate medium secondary text
-val NeuTextMuted = Color(0xFF64748B)         // Slate light placeholder text
+val NeuTextPrimary = Color.White             // Primary white text on dark cards
+val NeuTextSecondary = Color(0xFF94A3B8)     // Slate 400 secondary text
+val NeuTextMuted = Color(0xFF64748B)         // Slate 500 muted text
 
 val NeuSuccess = Color(0xFF10B981)           // Soft emerald
 val NeuError = Color(0xFFEF4444)             // Soft crimson alert

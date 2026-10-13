@@ -46,10 +46,10 @@ import java.util.Locale
 import com.example.ui.util.NumberUtils
 import com.example.ui.util.toEnglishDigits
 
-val ReceiptInkNavy = Color(0xFF1E3A8A)
-val ReceiptInkBlueAccent = Color(0xFF1D4ED8)
-val ReceiptInkRed = Color(0xFFDC2626)
-val ReceiptPaperWhite = Color(0xFFFFFFFF)
+val ReceiptInkNavy = Color(0xFF38BDF8)
+val ReceiptInkBlueAccent = Color(0xFF38BDF8)
+val ReceiptInkRed = Color(0xFFEF4444)
+val ReceiptPaperWhite = Color(0xFF1E293B)
 
 @Composable
 fun AutoSelectBasicTextField(
@@ -644,7 +644,7 @@ private fun RowScope.DataCell(
     weight: Float,
     isNumeric: Boolean = false,
     align: TextAlign = TextAlign.Center,
-    textColor: Color = Color.Black,
+    textColor: Color = Color.White,
     fontWeight: FontWeight = FontWeight.Normal,
     placeholder: String = "",
     subBadge: String? = null,
@@ -667,13 +667,12 @@ private fun RowScope.DataCell(
             .padding(horizontal = 0.5.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(5.dp))
             .background(
-                if (isFocused) Color(0xFFEFF6FF)
-                else if (isNumeric && value.isNotBlank()) Color(0xFFF8FAFC)
-                else Color.White
+                if (isFocused) Color(0xFF334155)
+                else Color(0xFF1E293B)
             )
             .border(
                 width = if (isFocused) 1.2.dp else 0.5.dp,
-                color = if (isFocused) ReceiptInkBlueAccent else Color(0xFFE2E8F0),
+                color = if (isFocused) ReceiptInkBlueAccent else Color(0xFF334155),
                 shape = RoundedCornerShape(5.dp)
             )
             .padding(horizontal = 2.dp, vertical = 3.dp),
