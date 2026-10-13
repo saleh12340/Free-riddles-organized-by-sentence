@@ -38,20 +38,17 @@ object ReceiptBitmapHelper {
             listOf(DualReceiptRow(rightDescription = "صنف", rightQuantityStr = "1", rightTotalAmountStr = "0"))
         }
 
-        val rightSubtotal = activeRows.sumOf { it.rightTotal }
-        val leftSubtotal = activeRows.sumOf { it.leftTotal }
-        val grandTotal = rightSubtotal + leftSubtotal
+        val grandTotal = activeRows.sumOf { it.rightTotal }
 
         // Dynamic height calculations scaled proportionally
         val headerHeight = 90f * scale
         val tableHeaderHeight = 26f * scale
         val rowHeight = 25f * scale
         val tableHeight = activeRows.size * rowHeight
-        val subtotalsHeight = 24f * scale
         val grandTotalHeight = 32f * scale
         val footerHeight = 22f * scale
         val padding = 8f * scale
-        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + subtotalsHeight + grandTotalHeight + footerHeight + (20f * scale)).toInt().coerceAtLeast(300)
+        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + grandTotalHeight + footerHeight + (20f * scale)).toInt().coerceAtLeast(300)
 
         val bitmap = Bitmap.createBitmap(widthPx, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -156,45 +153,24 @@ object ReceiptBitmapHelper {
 
         currentY += 22f * scale
 
-        // 3. TWO-COLUMN TABLE LAYOUT: EXACT ORDER (1. Total -> 2. Qty -> 3. Details -> 4. Unit Price)
-        val halfWidth = contentWidth / 2f
-        val rightStartX = padding + halfWidth
-        val leftStartX = padding
+        // 3. SINGLE-COLUMN TABLE LAYOUT
+        val colTotalW = contentWidth * 0.28f
+        val colQtyW = contentWidth * 0.16f
+        val colDescW = contentWidth * 0.36f
+        val colUnitW = contentWidth * 0.20f
 
-        // Sub-column Widths (Proportional: Total 23.5%, Qty 13.5%, Description 42.5%, Unit Price 20.5%)
-        val colTotalW = halfWidth * 0.235f
-        val colQtyW = halfWidth * 0.135f
-        val colDescW = halfWidth * 0.425f
-        val colUnitW = halfWidth * 0.205f
-
-        // Top line for column headers
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
-
-        // Draw Column Headers in Bold Black
         smallBoldPaint.textAlign = Paint.Align.CENTER
 
-        // Right Half Headers (RTL: 1. Total -> 2. Qty -> 3. Details -> 4. Unit Price)
-        canvas.drawText("الإجمالي", rightStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
-        canvas.drawText("العدد", rightStartX + halfWidth - colTotalW - (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
+        // RTL: Total -> Qty -> Description -> Unit Price
+        canvas.drawText("الإجمالي", widthPx - padding - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("العدد", widthPx - padding - colTotalW - (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("التفاصيل", rightStartX + halfWidth - colTotalW - colQtyW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("التفاصيل", widthPx - padding - colTotalW - colQtyW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("سعر الواحدة", rightStartX + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
-
-        // Left Half Headers (RTL: 1. Total -> 2. Qty -> 3. Details -> 4. Unit Price)
-        canvas.drawText("الإجمالي", leftStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
-        canvas.drawText("العدد", leftStartX + halfWidth - colTotalW - (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
-        smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("التفاصيل", leftStartX + halfWidth - colTotalW - colQtyW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
-        smallBoldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("سعر الواحدة", leftStartX + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
-
-        // Vertical divider between right and left columns in the header
-        canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + tableHeaderHeight, thinLinePaint)
+        canvas.drawText("سعر الواحدة", padding + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
 
         currentY += tableHeaderHeight
-
-        // Bottom line under headers
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
 
         // 4. DATA ROWS
@@ -214,83 +190,39 @@ object ReceiptBitmapHelper {
 
         for (row in activeRows) {
             val rowY = currentY
+            val qty = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+            val tot = row.rightTotal
+            val unitVal = if (qty > 0.0 && tot > 0.0) tot / qty else 0.0
 
-            // --- Right Section Cells (1. Total -> 2. Qty -> 3. Details -> 4. Unit Price) ---
             rowTotalPaint.textAlign = Paint.Align.CENTER
             if (row.rightTotalAmountStr.isNotBlank()) {
-                canvas.drawText(row.rightTotalAmountStr.toEnglishDigits(), rightStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
+                canvas.drawText(row.rightTotalAmountStr.toEnglishDigits(), widthPx - padding - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
             if (row.rightQuantityStr.isNotBlank()) {
-                canvas.drawText(formatQuantity(row.rightQuantityStr), rightStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(formatQuantity(row.rightQuantityStr), widthPx - padding - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT
             if (row.rightDescription.isNotBlank()) {
-                val maxChars = (18 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
+                val maxChars = (24 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
                 val desc = if (row.rightDescription.length > maxChars) row.rightDescription.take(maxChars - 1) + ".." else row.rightDescription
-                canvas.drawText(desc, rightStartX + halfWidth - colTotalW - colQtyW - (2f * scale), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(desc, widthPx - padding - colTotalW - colQtyW - (2f * scale), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
-            val rightQtyValue = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
-            val rightUnitValue = if (rightQtyValue > 0.0 && row.rightTotal > 0.0) row.rightTotal / rightQtyValue else 0.0
-            if (rightUnitValue > 0.0) {
-                canvas.drawText(formatter.format(rightUnitValue).toEnglishDigits(), rightStartX + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
+            if (unitVal > 0.0) {
+                canvas.drawText(formatter.format(unitVal).toEnglishDigits(), padding + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
-            // --- Left Section Cells (1. Total -> 2. Qty -> 3. Details -> 4. Unit Price) ---
-            rowTotalPaint.textAlign = Paint.Align.CENTER
-            if (row.leftTotalAmountStr.isNotBlank()) {
-                canvas.drawText(row.leftTotalAmountStr.toEnglishDigits(), leftStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
-            }
-
-            rowDescPaint.textAlign = Paint.Align.CENTER
-            if (row.leftQuantityStr.isNotBlank()) {
-                canvas.drawText(formatQuantity(row.leftQuantityStr), leftStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
-            }
-
-            rowDescPaint.textAlign = Paint.Align.RIGHT
-            if (row.leftDescription.isNotBlank()) {
-                val maxChars = (18 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
-                val desc = if (row.leftDescription.length > maxChars) row.leftDescription.take(maxChars - 1) + ".." else row.leftDescription
-                canvas.drawText(desc, leftStartX + halfWidth - colTotalW - colQtyW - (2f * scale), rowY + (17f * scale), rowDescPaint)
-            }
-
-            rowDescPaint.textAlign = Paint.Align.CENTER
-            val leftQtyValue = (row.leftQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
-            val leftUnitValue = if (leftQtyValue > 0.0 && row.leftTotal > 0.0) row.leftTotal / leftQtyValue else 0.0
-            if (leftUnitValue > 0.0) {
-                canvas.drawText(formatter.format(leftUnitValue).toEnglishDigits(), leftStartX + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
-            }
-
-            // Central vertical divider between columns
-            canvas.drawLine(padding + halfWidth, rowY, padding + halfWidth, rowY + rowHeight, thinLinePaint)
-
-            // Horizontal row separator
             canvas.drawLine(padding, rowY + rowHeight, widthPx - padding, rowY + rowHeight, thinLinePaint)
-
             currentY += rowHeight
         }
 
-        currentY += 2f * scale
+        currentY += 4f * scale
 
-        // 5. SUBTOTALS (كل شيء إجمالي لحاله)
-        boldPaint.textSize = 12.5f * scale
-        boldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("إجمالي اليمين: ${formatter.format(rightSubtotal).toEnglishDigits()} ${storeConfig.currencySymbol}", rightStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
-        canvas.drawText("إجمالي اليسار: ${formatter.format(leftSubtotal).toEnglishDigits()} ${storeConfig.currencySymbol}", leftStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
-
-        // Central divider in subtotals
-        canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + subtotalsHeight, thinLinePaint)
-        currentY += subtotalsHeight
-
-        // Dividing line before Grand Total
-        canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
-        currentY += 3f * scale
-
-        // 6. GRAND TOTAL DIRECTLY UNDERNEATH (المبلغ الإجمالي العام)
+        // 5. GRAND TOTAL DIRECTLY UNDERNEATH
         canvas.drawRect(padding, currentY, widthPx - padding, currentY + grandTotalHeight, solidBlackFill)
 
         whiteTextPaint.textAlign = Paint.Align.RIGHT

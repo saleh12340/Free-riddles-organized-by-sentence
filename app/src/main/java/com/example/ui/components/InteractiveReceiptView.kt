@@ -46,10 +46,10 @@ import java.util.Locale
 import com.example.ui.util.NumberUtils
 import com.example.ui.util.toEnglishDigits
 
-val ReceiptInkNavy = Color(0xFF38BDF8)
-val ReceiptInkBlueAccent = Color(0xFF38BDF8)
+val ReceiptInkNavy = Color(0xFF1E3A8A)
+val ReceiptInkBlueAccent = Color(0xFF2563EB)
 val ReceiptInkRed = Color(0xFFEF4444)
-val ReceiptPaperWhite = Color(0xFF1E293B)
+val ReceiptPaperWhite = Color(0xFFFFFFFF)
 
 @Composable
 fun AutoSelectBasicTextField(
@@ -382,39 +382,27 @@ fun InteractiveReceiptView(
                 Spacer(modifier = Modifier.height(2.dp))
             }
 
-            // 3. INVOICE-LIKE ITEM GRID: TRUE DUAL-COLUMN SIDE-BY-SIDE
+            // 3. SINGLE-COLUMN ITEM GRID (شق واحد فقط)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
                     .background(ReceiptInkNavy)
-                    .padding(vertical = 3.dp),
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Right Half Headers (الشق الأيمن: القيمة الإجمالية -> العدد -> التفاصيل -> سعر الواحدة)
-                HeaderCell("الإجمالي", 0.80f)
-                HeaderCell("العدد", 0.45f)
-                HeaderCell("التفاصيل", 1.45f)
-                HeaderCell("سعر الواحدة", 0.70f)
-
-                // Central Vertical Divider Line
-                Box(Modifier.width(1.5.dp).height(20.dp).background(Color.White))
-
-                // Left Half Headers (الشق الأيسر: القيمة الإجمالية -> العدد -> التفاصيل -> سعر الواحدة)
-                HeaderCell("الإجمالي", 0.80f)
-                HeaderCell("العدد", 0.45f)
-                HeaderCell("التفاصيل", 1.45f)
-                HeaderCell("سعر الواحدة", 0.70f)
+                HeaderCell("الإجمالي", 0.95f)
+                HeaderCell("العدد", 0.50f)
+                HeaderCell("التفاصيل", 2.10f)
+                HeaderCell("سعر الواحدة", 0.85f)
+                HeaderCell("م", 0.35f)
             }
 
             dualRows.forEachIndexed { index, row ->
-                val rightQty = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
-                val rightTot = row.rightTotal
-                val rightUnitPrice = if (rightQty > 0.0 && rightTot > 0.0) rightTot / rightQty else 0.0
-                val leftQty = (row.leftQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
-                val leftTot = row.leftTotal
-                val leftUnitPrice = if (leftQty > 0.0 && leftTot > 0.0) leftTot / leftQty else 0.0
+                val qty = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                val tot = row.rightTotal
+                val unitPrice = if (qty > 0.0 && tot > 0.0) tot / qty else 0.0
 
                 Row(
                     modifier = Modifier
@@ -423,19 +411,18 @@ fun InteractiveReceiptView(
                         .clip(RoundedCornerShape(6.dp))
                         .border(
                             0.6.dp,
-                            if (row.hasRightData || row.hasLeftData) ReceiptInkNavy.copy(alpha = 0.35f) else Color(0xFFE2E8F0),
+                            if (row.hasRightData) ReceiptInkNavy.copy(alpha = 0.35f) else Color(0xFFE2E8F0),
                             RoundedCornerShape(6.dp)
                         )
                         .background(if (index % 2 == 0) Color.White else Color(0xFFF8FAFC)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // --- RIGHT HALF (الشق الأيمن) ---
-                    // 1. القيمة الإجمالية
+                    // 1. الإجمالي
                     DataCell(
                         value = row.rightTotalAmountStr.toEnglishDigits(),
                         onValueChange = { onUpdateRightTotalAmount(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
-                        weight = 0.80f,
+                        weight = 0.95f,
                         isNumeric = true,
                         textColor = ReceiptInkNavy,
                         fontWeight = FontWeight.Bold,
@@ -446,7 +433,7 @@ fun InteractiveReceiptView(
                         value = formatQuantity(row.rightQuantityStr),
                         onValueChange = { onUpdateRightQuantity(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
-                        weight = 0.45f,
+                        weight = 0.50f,
                         isNumeric = true
                     )
                     // 3. التفاصيل
@@ -454,117 +441,50 @@ fun InteractiveReceiptView(
                         value = row.rightDescription,
                         onValueChange = { onUpdateRightDescription(index, it) },
                         isEditable = isEditable,
-                        weight = 1.45f,
+                        weight = 2.10f,
                         align = TextAlign.Start,
-                        placeholder = if (isEditable && row.isCompletelyEmpty) "صنف" else ""
+                        placeholder = if (isEditable && row.isCompletelyEmpty) "أدخل اسم الصنف..." else ""
                     )
-                    // 4. سعر الواحدة (يستنتج ويعرض)
+                    // 4. سعر الواحدة
                     DataCell(
-                        value = if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "",
+                        value = if (unitPrice > 0.0) formatter.format(unitPrice) else "",
                         onValueChange = {},
                         isEditable = false,
-                        weight = 0.70f,
+                        weight = 0.85f,
                         isNumeric = true,
                         textColor = ReceiptInkBlueAccent,
                         fontWeight = FontWeight.Bold
                     )
-
-                    // --- CENTRAL VERTICAL DIVIDER ---
-                    Box(
-                        modifier = Modifier
-                            .width(1.5.dp)
-                            .fillMaxHeight()
-                            .background(ReceiptInkNavy.copy(alpha = 0.35f))
-                    )
-
-                    // --- LEFT HALF (الشق الأيسر) ---
-                    // 1. القيمة الإجمالية
+                    // 5. الرقم (م)
                     DataCell(
-                        value = row.leftTotalAmountStr.toEnglishDigits(),
-                        onValueChange = { onUpdateLeftTotalAmount(index, it.toEnglishDigits()) },
-                        isEditable = isEditable,
-                        weight = 0.80f,
-                        isNumeric = true,
-                        textColor = ReceiptInkNavy,
-                        fontWeight = FontWeight.Bold,
-                        placeholder = ""
-                    )
-                    // 2. العدد
-                    DataCell(
-                        value = formatQuantity(row.leftQuantityStr),
-                        onValueChange = { onUpdateLeftQuantity(index, it.toEnglishDigits()) },
-                        isEditable = isEditable,
-                        weight = 0.45f,
-                        isNumeric = true
-                    )
-                    // 3. التفاصيل
-                    DataCell(
-                        value = row.leftDescription,
-                        onValueChange = { onUpdateLeftDescription(index, it) },
-                        isEditable = isEditable,
-                        weight = 1.45f,
-                        align = TextAlign.Start,
-                        placeholder = ""
-                    )
-                    // 4. سعر الواحدة (يستنتج ويعرض)
-                    DataCell(
-                        value = if (leftUnitPrice > 0.0) formatter.format(leftUnitPrice) else "",
+                        value = (index + 1).toString().toEnglishDigits(),
                         onValueChange = {},
                         isEditable = false,
-                        weight = 0.70f,
-                        isNumeric = true,
-                        textColor = ReceiptInkBlueAccent,
-                        fontWeight = FontWeight.Bold
+                        weight = 0.35f,
+                        textColor = Color.Gray,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
             Spacer(modifier = Modifier.height(2.dp))
 
             // 5. TOTALS SECTION:
-            // Part A: Subtotals side-by-side (كل شيء إجمالي لحاله)
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 1.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(ReceiptInkNavy.copy(alpha = 0.08f))
+                    .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
             ) {
-                // Right Subtotal Box
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(ReceiptInkNavy.copy(alpha = 0.08f))
-                        .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.3f), RoundedCornerShape(3.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "إجمالي اليمين: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}",
-                        fontSize = 8.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ReceiptInkBlueAccent,
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                // Left Subtotal Box
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(ReceiptInkNavy.copy(alpha = 0.08f))
-                        .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.3f), RoundedCornerShape(3.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "إجمالي اليسار: ${formatter.format(leftSubtotal)} ${storeConfig.currencySymbol}",
-                        fontSize = 8.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ReceiptInkBlueAccent,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                Text(
+                    text = "إجمالي الأصناف: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ReceiptInkBlueAccent,
+                    textAlign = TextAlign.Center
+                )
             }
 
             Spacer(modifier = Modifier.height(1.5.dp))
@@ -644,7 +564,7 @@ private fun RowScope.DataCell(
     weight: Float,
     isNumeric: Boolean = false,
     align: TextAlign = TextAlign.Center,
-    textColor: Color = Color.White,
+    textColor: Color = Color(0xFF0F172A),
     fontWeight: FontWeight = FontWeight.Normal,
     placeholder: String = "",
     subBadge: String? = null,
@@ -667,12 +587,12 @@ private fun RowScope.DataCell(
             .padding(horizontal = 0.5.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(5.dp))
             .background(
-                if (isFocused) Color(0xFF334155)
-                else Color(0xFF1E293B)
+                if (isFocused) Color(0xFFEFF6FF)
+                else Color.White
             )
             .border(
                 width = if (isFocused) 1.2.dp else 0.5.dp,
-                color = if (isFocused) ReceiptInkBlueAccent else Color(0xFF334155),
+                color = if (isFocused) ReceiptInkBlueAccent else Color(0xFFCBD5E1),
                 shape = RoundedCornerShape(5.dp)
             )
             .padding(horizontal = 2.dp, vertical = 3.dp),

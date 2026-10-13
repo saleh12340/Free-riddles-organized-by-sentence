@@ -1,17 +1,27 @@
-# خطة عمل: منع اختفاء وتجزءة البيانات في جدول الفاتورة التفاعلي (InteractiveReceiptView)
+# Implementation Plan - Minimalist Clean Light Redesign
 
-## المشكلة المحددة:
-بناءً على إجابة المستخدم وصورة الفاتورة، فإن خلايا جدول عرض الفاتورة (InteractiveReceiptView) تفقد البيانات أو تقتطعها عند إطالة النصوص، الأسماء، أو الأرقام، وذلك بسبب:
-1. وجود ارتفاع ثابت (`height(30.dp)`) لصفوف الجدول (`dualRows`) وارتفاع ثابت (`height(28.dp)`) لخلايا البيانات (`DataCell`)، مما يمنع احتواء الأسطر المتعددة أو النصوص الكبيرة ويؤدي إلى اخفائها.
-2. قيود عرض النصوص والأسطر (`maxLines` و `singleLine`) في حقول الإدخال والنصوص داخل الخلايا.
-3. توزيع الأوزان (`weight`) النسبية للأعمدة الذي قد يضغط الأعمدة الرقمية أو يمنح مساحة غير مرنة لمحتوى الوصف والتفاصيل.
+## Goal
+Redesign the application with a minimalist clean light aesthetic featuring subtle soft gray cards (`#F1F5F9`), clean white background, refined typography, and neutral professional colors, replacing the dark card design.
 
-## خطوات الحل والتنفيذ:
-1. **إزالة القيود والارتفاعات الثابتة في `InteractiveReceiptView.kt`:**
-   - إزالة `.height(30.dp)` من صفوف الجدول (`dualRows`) والسماح للارتفاع بالتكيف تلقائياً مع محتوى الخلايا (`wrap-content`).
-   - إزالة الارتفاعات الثابتة (`height(28.dp) / height(34.dp)`) من خلايا البيانات (`DataCell`) وجعلها مرنة وقابلة للتمدد عمودياً عند كتابة نصوص طويلة أو أسطر متعددة.
-2. **تحسين مرونة حقول النصوص والأرقام:**
-   - ضبط `maxLines` و `singleLine` في `DataCell` لتسمح بلف النصوص بشكل صحيح دون اقتطاع أو اختفاء.
-   - تحسين أحجام الخطوط والتفاف الأسطر للكميات والمبالغ والوصف لتظهر كاملة وواضحة دائماً في صندوق عرض الفاتورة.
-3. **الاختبار والتحقق:**
-   - تشغيل `compile_applet` للتحقق من سلامة الترجمة والبناء.
+## Proposed Changes
+
+### 1. Theme & Color Palette (`Neumorphic.kt`)
+- Update color constants:
+  - `NeuBackground`: Clean pure white (`Color.White`) or soft light gray (`Color(0xFFF8FAFC)`).
+  - `NeuSurface`: Subtle soft light gray (`Color(0xFFF1F5F9)`).
+  - `NeuSurfaceRaised`: Elevated clean light surface (`Color(0xFFE2E8F0)`).
+  - `NeuTextPrimary`: Dark slate text (`Color(0xFF0F172A)`).
+  - `NeuTextSecondary`: Medium slate text (`Color(0xFF475569)`).
+  - `NeuAccentBlue`: Professional clean blue (`Color(0xFF2563EB)`).
+
+### 2. Receipt & Invoice View (`InteractiveReceiptView.kt`)
+- Update receipt paper background to pure white / soft subtle paper (`Color(0xFFFFFFFF)`).
+- Update cell backgrounds to clean light gray / white with subtle clean borders (`Color(0xFFE2E8F0)`).
+- Ensure dark readable text (`Color(0xFF0F172A)`).
+
+### 3. Screen Redesign across all screens
+- Ensure `NewInvoiceScreen`, `InvoiceHistoryScreen`, `ProductsCatalogScreen`, `CustomersScreen`, `CustomerAccountStatementScreen`, `PrinterSetupScreen`, and `StoreSettingsScreen` all adopt the minimalist clean light style with subtle gray cards and crisp dark text.
+
+## Verification Plan
+- Compile applet with `compile_applet`.
+- Verify successful build and clean aesthetic.
