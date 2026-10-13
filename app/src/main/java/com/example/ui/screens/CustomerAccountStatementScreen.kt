@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,7 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -209,95 +212,132 @@ fun CustomerAccountStatementScreen(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 1. FINANCIAL SUMMARY KPI CARDS
+            // 1. FINANCIAL SUMMARY KPI CARDS (COMPACT & CONTENT-CONTAINING)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 // Card 1: Total Invoices
                 NeuCard(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(8.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    elevation = 3.dp,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 5.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text("إجمالي المشتريات", fontSize = 10.sp, color = NeuTextSecondary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NeuIconBox(size = 20.dp, shape = RoundedCornerShape(5.dp), backgroundColor = NeuAccentBlue.copy(alpha = 0.12f)) {
+                                Icon(AppIcons.Receipt, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(11.dp))
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            Text("المشتريات", fontSize = 9.5.sp, color = NeuTextSecondary, fontWeight = FontWeight.Medium)
+                        }
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "${formatter.format(totalInvoices)}",
-                            fontSize = 13.5.sp,
+                            formatter.format(totalInvoices),
+                            fontSize = 12.5.sp,
                             fontWeight = FontWeight.Black,
                             color = NeuTextPrimary
                         )
-                        Text(config.currencySymbol, fontSize = 9.sp, color = NeuTextMuted)
+                        Text(config.currencySymbol, fontSize = 8.5.sp, color = NeuTextMuted)
                     }
                 }
 
                 // Card 2: Total Receipts
                 NeuCard(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(8.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    elevation = 3.dp,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 5.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text("إجمالي المسدد", fontSize = 10.sp, color = NeuTextSecondary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NeuIconBox(size = 20.dp, shape = RoundedCornerShape(5.dp), backgroundColor = NeuSuccess.copy(alpha = 0.12f)) {
+                                Icon(AppIcons.Payment, contentDescription = null, tint = NeuSuccess, modifier = Modifier.size(11.dp))
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            Text("المسدد", fontSize = 9.5.sp, color = NeuTextSecondary, fontWeight = FontWeight.Medium)
+                        }
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "${formatter.format(totalReceipts)}",
-                            fontSize = 13.5.sp,
+                            formatter.format(totalReceipts),
+                            fontSize = 12.5.sp,
                             fontWeight = FontWeight.Black,
                             color = NeuSuccess
                         )
-                        Text(config.currencySymbol, fontSize = 9.sp, color = NeuTextMuted)
+                        Text(config.currencySymbol, fontSize = 8.5.sp, color = NeuTextMuted)
                     }
                 }
 
                 // Card 3: Net Balance
                 NeuCard(
                     modifier = Modifier.weight(1.1f),
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(8.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    elevation = 3.dp,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 5.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            if (remainingBalance > 0) "المتبقي (عليه)" else if (remainingBalance < 0) "له رصيد" else "الحساب خالص",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (remainingBalance > 0) NeuAccentBlue else if (remainingBalance < 0) NeuSuccess else NeuTextSecondary
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NeuIconBox(
+                                size = 20.dp,
+                                shape = RoundedCornerShape(5.dp),
+                                backgroundColor = if (remainingBalance > 0) NeuAccentBlue.copy(alpha = 0.12f) else NeuSuccess.copy(alpha = 0.12f)
+                            ) {
+                                Icon(
+                                    AppIcons.Store,
+                                    contentDescription = null,
+                                    tint = if (remainingBalance > 0) NeuAccentBlue else NeuSuccess,
+                                    modifier = Modifier.size(11.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                if (remainingBalance > 0) "المتبقي" else if (remainingBalance < 0) "له رصيد" else "خالص",
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (remainingBalance > 0) NeuAccentBlue else NeuSuccess
+                            )
+                        }
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "${formatter.format(remainingBalance)}",
-                            fontSize = 14.sp,
+                            formatter.format(remainingBalance),
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Black,
                             color = if (remainingBalance > 0) NeuAccentBlue else NeuSuccess
                         )
-                        Text(config.currencySymbol, fontSize = 9.sp, color = NeuTextMuted)
+                        Text(config.currencySymbol, fontSize = 8.5.sp, color = NeuTextMuted)
                     }
                 }
             }
 
-            // 2. QUICK ADD RECEIPT / PAYMENT RULER BAR
+            // 2. QUICK ADD RECEIPT / PAYMENT COMPACT BAR
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(8.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 3.dp,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "تسجيل سند قبض / دفعة نقدية سريعة",
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeuTextPrimary
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NeuIconBox(size = 22.dp, shape = RoundedCornerShape(5.dp)) {
+                                Icon(AppIcons.Payment, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(13.dp))
+                            }
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                "تسجيل سند قبض / دفعة نقدية",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeuTextPrimary
+                            )
+                        }
 
                         // Quick Share Statement via WhatsApp
                         TextButton(
@@ -313,67 +353,79 @@ fun CustomerAccountStatementScreen(
                                 }
                                 context.startActivity(Intent.createChooser(sendIntent, "مشاركة الحساب عبر الواتساب"))
                             },
-                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 1.dp)
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(13.dp))
+                            Icon(Icons.Default.Share, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(12.dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("واتساب", fontSize = 11.sp, color = NeuAccentBlue, fontWeight = FontWeight.Bold)
+                            Text("واتساب", fontSize = 10.5.sp, color = NeuAccentBlue, fontWeight = FontWeight.Bold)
                         }
                     }
 
-                    // Operation Type Chips
+                    // Compact Operation Type Chips
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         paymentTypes.forEach { type ->
                             FilterChip(
                                 selected = paymentTypeChoice == type,
                                 onClick = { paymentTypeChoice = type },
-                                label = { Text(type, fontSize = 10.sp) },
+                                label = { Text(type, fontSize = 9.sp, fontWeight = if (paymentTypeChoice == type) FontWeight.Bold else FontWeight.Normal) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
                     }
 
-                    // Inputs Row
+                    // Compact Inputs + Add Button in Single Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Amount
-                        NeuInsetBox(modifier = Modifier.weight(1.1f), shape = RoundedCornerShape(10.dp)) {
-                            TextField(
+                        NeuInsetBox(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            BasicTextField(
                                 value = amountStr,
                                 onValueChange = { amountStr = it.toEnglishDigits() },
-                                placeholder = { Text("المبلغ (${config.currencySymbol})", fontSize = 11.sp) },
                                 singleLine = true,
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.5.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                                cursorBrush = androidx.compose.ui.graphics.SolidColor(NeuAccentBlue),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
-                                ),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                decorationBox = { inner ->
+                                    if (amountStr.isEmpty()) {
+                                        Text("المبلغ (${config.currencySymbol})", fontSize = 10.5.sp, color = NeuTextMuted)
+                                    }
+                                    inner()
+                                }
                             )
                         }
 
                         // Notes
-                        NeuInsetBox(modifier = Modifier.weight(1.4f), shape = RoundedCornerShape(10.dp)) {
-                            TextField(
+                        NeuInsetBox(
+                            modifier = Modifier
+                                .weight(1.3f)
+                                .height(38.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            BasicTextField(
                                 value = receiptNotes,
                                 onValueChange = { receiptNotes = it },
-                                placeholder = { Text("البيان / ملاحظات", fontSize = 11.sp) },
                                 singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
-                                ),
-                                modifier = Modifier.fillMaxWidth()
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = NeuTextPrimary),
+                                cursorBrush = androidx.compose.ui.graphics.SolidColor(NeuAccentBlue),
+                                modifier = Modifier.fillMaxWidth(),
+                                decorationBox = { inner ->
+                                    if (receiptNotes.isEmpty()) {
+                                        Text("البيان / ملاحظات", fontSize = 10.5.sp, color = NeuTextMuted)
+                                    }
+                                    inner()
+                                }
                             )
                         }
 
@@ -390,13 +442,14 @@ fun CustomerAccountStatementScreen(
                                     Toast.makeText(context, "يرجى كتابة مبلغ صحيح", Toast.LENGTH_SHORT).show()
                                 }
                             },
-                            modifier = Modifier.width(76.dp).height(44.dp),
+                            modifier = Modifier.height(38.dp),
+                            shape = RoundedCornerShape(8.dp),
                             isPrimary = true
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(2.dp))
-                                Text("إضافة", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                                Text("إضافة", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                             }
                         }
                     }
@@ -412,21 +465,14 @@ fun CustomerAccountStatementScreen(
                 Text(
                     "سجل العمليات والحركات المالية:",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.5.sp,
+                    fontSize = 12.sp,
                     color = NeuTextPrimary
                 )
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = NeuSurfaceRaised
-                ) {
-                    Text(
-                        "${combinedTransactions.size} حركة",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeuTextSecondary
-                    )
-                }
+                NeuPillBadge(
+                    text = "${combinedTransactions.size} حركة",
+                    fontSize = 10.sp,
+                    textColor = NeuTextSecondary
+                )
             }
 
             if (combinedTransactions.isEmpty()) {
@@ -437,9 +483,9 @@ fun CustomerAccountStatementScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(AppIcons.Receipt, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(44.dp))
-                        Spacer(Modifier.height(6.dp))
-                        Text("لا توجد حركات أو فواتير مسجلة لهذا العميل حتى الآن", fontSize = 12.5.sp, color = NeuTextSecondary)
+                        Icon(AppIcons.Receipt, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(36.dp))
+                        Spacer(Modifier.height(4.dp))
+                        Text("لا توجد حركات أو فواتير مسجلة لهذا العميل حتى الآن", fontSize = 12.sp, color = NeuTextSecondary)
                     }
                 }
             } else {
@@ -448,7 +494,7 @@ fun CustomerAccountStatementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(combinedTransactions, key = { "${it.rawType}_${it.id}" }) { tx ->
                         if (tx.isDebit) {
@@ -460,66 +506,85 @@ fun CustomerAccountStatementScreen(
 
                         NeuCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(10.dp)
+                            shape = RoundedCornerShape(10.dp),
+                            elevation = 2.dp,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = if (tx.isDebit) NeuAccentBlue.copy(alpha = 0.15f) else NeuSuccess.copy(alpha = 0.15f)
-                                        ) {
-                                            Text(
-                                                text = if (tx.isDebit) "فاتورة (مدين +)" else "سند قبض (دائن -)",
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                fontSize = 9.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (tx.isDebit) NeuAccentBlue else NeuSuccess
-                                            )
-                                        }
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(
-                                            tx.title,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            color = NeuTextPrimary
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    NeuIconBox(
+                                        size = 28.dp,
+                                        shape = RoundedCornerShape(6.dp),
+                                        backgroundColor = if (tx.isDebit) NeuAccentBlue.copy(alpha = 0.12f) else NeuSuccess.copy(alpha = 0.12f)
+                                    ) {
+                                        Icon(
+                                            if (tx.isDebit) AppIcons.Receipt else AppIcons.Payment,
+                                            contentDescription = null,
+                                            tint = if (tx.isDebit) NeuAccentBlue else NeuSuccess,
+                                            modifier = Modifier.size(14.dp)
                                         )
                                     }
-                                    Spacer(Modifier.height(3.dp))
-                                    Text(
-                                        "${tx.date} • ${tx.details}",
-                                        fontSize = 10.5.sp,
-                                        color = NeuTextSecondary
-                                    )
-                                }
-
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        "${formatter.format(tx.amount)} ${config.currencySymbol}",
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 13.sp,
-                                        color = if (tx.isDebit) NeuTextPrimary else NeuSuccess
-                                    )
-                                    Text(
-                                        "الرصيد التراكمي: ${formatter.format(currentRunBal)}",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (currentRunBal > 0) NeuAccentBlue else NeuSuccess
-                                    )
-                                }
-
-                                if (!tx.isDebit && tx.amount > 0) {
                                     Spacer(Modifier.width(6.dp))
-                                    IconButton(
-                                        onClick = { showDeleteConfirmDialog = tx.id },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "حذف السند", tint = NeuError, modifier = Modifier.size(15.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            NeuPillBadge(
+                                                text = if (tx.isDebit) "فاتورة" else "سند",
+                                                textColor = if (tx.isDebit) NeuAccentBlue else NeuSuccess,
+                                                backgroundColor = if (tx.isDebit) NeuAccentBlue.copy(alpha = 0.12f) else NeuSuccess.copy(alpha = 0.12f),
+                                                fontSize = 8.5.sp
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                tx.title,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.5.sp,
+                                                color = NeuTextPrimary,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            )
+                                        }
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            "${tx.date} • ${tx.details}",
+                                            fontSize = 9.5.sp,
+                                            color = NeuTextSecondary,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            "${formatter.format(tx.amount)} ${config.currencySymbol}",
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 12.sp,
+                                            color = if (tx.isDebit) NeuTextPrimary else NeuSuccess
+                                        )
+                                        Text(
+                                            "رصيد: ${formatter.format(currentRunBal)}",
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (currentRunBal > 0) NeuAccentBlue else NeuSuccess
+                                        )
+                                    }
+
+                                    if (!tx.isDebit && tx.amount > 0) {
+                                        Spacer(Modifier.width(4.dp))
+                                        IconButton(
+                                            onClick = { showDeleteConfirmDialog = tx.id },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "حذف السند", tint = NeuError, modifier = Modifier.size(14.dp))
+                                        }
                                     }
                                 }
                             }

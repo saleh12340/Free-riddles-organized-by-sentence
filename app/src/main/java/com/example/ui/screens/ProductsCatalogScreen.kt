@@ -104,14 +104,14 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                     editingProduct = null
                     showAddDialog = true
                 },
-                size = 56.dp,
+                size = 46.dp,
                 isPrimary = true
             ) {
                 Icon(
                     Icons.Default.Add,
                     contentDescription = "إضافة منتج جديد",
                     tint = Color.White,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -120,52 +120,52 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Sunken Neumorphic Search Bar
+            // Sunken Neumorphic Search Bar (Compact)
             NeuInsetBox(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.Search, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 13.5.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 12.5.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.weight(1f),
                         decorationBox = { inner ->
                             if (searchQuery.isEmpty()) {
-                                Text("بحث عن صنف في الدليل...", fontSize = 13.5.sp, color = NeuTextMuted)
+                                Text("بحث عن صنف في الدليل...", fontSize = 12.sp, color = NeuTextMuted)
                             }
                             inner()
                         }
                     )
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(22.dp)) {
-                            Icon(Icons.Default.Clear, contentDescription = "مسح", tint = NeuTextMuted, modifier = Modifier.size(16.dp))
+                        IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Default.Clear, contentDescription = "مسح", tint = NeuTextMuted, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
             }
 
-            // Category Filter Chips Row
+            // Category Filter Chips Row (Compact)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 listOf("الكل", "عام", "مواد غذائية", "مشروبات", "معلبات").forEach { cat ->
                     FilterChip(
                         selected = selectedCategoryFilter == cat,
                         onClick = { selectedCategoryFilter = cat },
-                        label = { Text(cat, fontSize = 10.sp, fontWeight = if (selectedCategoryFilter == cat) FontWeight.Bold else FontWeight.Normal) },
+                        label = { Text(cat, fontSize = 9.sp, fontWeight = if (selectedCategoryFilter == cat) FontWeight.Bold else FontWeight.Normal) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -182,19 +182,19 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                         Text(
                             text = "لا توجد أصناف مطابقة للبحث.",
                             color = NeuTextMuted,
-                            fontSize = 13.sp
+                            fontSize = 12.sp
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = "اضغط على زر (+) في الأسفل لإضافة صنف جديد",
                             color = NeuTextSecondary,
-                            fontSize = 11.5.sp
+                            fontSize = 10.5.sp
                         )
                     }
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredList, key = { it.productId }) { product ->
@@ -208,46 +208,59 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                                     productCategoryInput = product.category
                                     showAddDialog = true
                                 },
-                            shape = RoundedCornerShape(18.dp),
-                            elevation = 6.dp,
-                            contentPadding = PaddingValues(12.dp)
+                            shape = RoundedCornerShape(11.dp),
+                            elevation = 3.dp,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = product.name,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = NeuTextPrimary
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "القسم: ${product.category}",
-                                        fontSize = 11.5.sp,
-                                        color = NeuTextSecondary
-                                    )
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    NeuIconBox(
+                                        size = 32.dp,
+                                        shape = RoundedCornerShape(7.dp),
+                                        backgroundColor = NeuAccentBlue.copy(alpha = 0.10f)
+                                    ) {
+                                        Icon(
+                                            AppIcons.Store,
+                                            contentDescription = null,
+                                            tint = NeuAccentBlue,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = product.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.5.sp,
+                                            color = NeuTextPrimary,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        NeuPillBadge(
+                                            text = product.category,
+                                            fontSize = 9.sp,
+                                            textColor = NeuTextSecondary
+                                        )
+                                    }
                                 }
 
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = NeuInsetBg
-                                    ) {
-                                        Text(
-                                            text = "${formatter.format(product.defaultUnitPrice)} ${storeConfig.currencySymbol}",
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                            fontWeight = FontWeight.Black,
-                                            fontSize = 14.sp,
-                                            color = NeuAccentBlue
-                                        )
-                                    }
+                                    NeuPillBadge(
+                                        text = "${formatter.format(product.defaultUnitPrice)} ${storeConfig.currencySymbol}",
+                                        fontSize = 11.sp,
+                                        textColor = NeuAccentBlue
+                                    )
 
                                     // Quick Edit
                                     NeuCircleButton(
@@ -258,26 +271,26 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                                             productCategoryInput = product.category
                                             showAddDialog = true
                                         },
-                                        size = 32.dp
+                                        size = 28.dp
                                     ) {
                                         Icon(
                                             Icons.Default.Edit,
                                             contentDescription = "تعديل الصنف",
                                             tint = NeuTextSecondary,
-                                            modifier = Modifier.size(15.dp)
+                                            modifier = Modifier.size(13.dp)
                                         )
                                     }
 
                                     // Delete
                                     NeuCircleButton(
                                         onClick = { viewModel.deleteCatalogProduct(product) },
-                                        size = 32.dp
+                                        size = 28.dp
                                     ) {
                                         Icon(
                                             Icons.Default.Delete,
                                             contentDescription = "حذف الصنف",
                                             tint = NeuError,
-                                            modifier = Modifier.size(15.dp)
+                                            modifier = Modifier.size(13.dp)
                                         )
                                     }
                                 }

@@ -114,66 +114,67 @@ fun InvoiceHistoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Sunken Neumorphic Search Bar
+            // Sunken Neumorphic Search Bar (Compact)
             NeuInsetBox(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.Search, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 13.5.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 12.5.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.weight(1f),
                         decorationBox = { inner ->
                             if (searchQuery.isEmpty()) {
-                                Text("بحث باسم العميل أو رقم الفاتورة...", fontSize = 13.5.sp, color = NeuTextMuted)
+                                Text("بحث باسم العميل أو رقم الفاتورة...", fontSize = 12.sp, color = NeuTextMuted)
                             }
                             inner()
                         }
                     )
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(22.dp)) {
-                            Icon(Icons.Default.Clear, contentDescription = "مسح", tint = NeuTextMuted, modifier = Modifier.size(16.dp))
+                        IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Default.Clear, contentDescription = "مسح", tint = NeuTextMuted, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
             }
 
-            // Filter Chips Row
+            // Filter Chips Row (Compact)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 listOf("الكل", "اليوم", "هذا الأسبوع", "هذا الشهر", "نقداً", "أجل").forEach { filterName ->
                     FilterChip(
                         selected = selectedPeriodFilter == filterName,
                         onClick = { selectedPeriodFilter = filterName },
-                        label = { Text(filterName, fontSize = 10.sp, fontWeight = if (selectedPeriodFilter == filterName) FontWeight.Bold else FontWeight.Normal) },
+                        label = { Text(filterName, fontSize = 9.sp, fontWeight = if (selectedPeriodFilter == filterName) FontWeight.Bold else FontWeight.Normal) },
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
 
-            // Stats KPI Dashboard
+            // Stats KPI Dashboard (Compact)
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                contentPadding = PaddingValues(10.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 2.dp,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -182,42 +183,35 @@ fun InvoiceHistoryScreen(
                     ) {
                         Text(
                             text = "ملخص المبيعات ($selectedPeriodFilter):",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeuTextPrimary
                         )
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = NeuInsetBg
-                        ) {
-                            Text(
-                                text = "${filteredList.size} فاتورة",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeuAccentBlue
-                            )
-                        }
+                        NeuPillBadge(
+                            text = "${filteredList.size} فاتورة",
+                            fontSize = 10.sp,
+                            textColor = NeuAccentBlue
+                        )
                     }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         // Total Card
                         Surface(
                             modifier = Modifier.weight(1.2f),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = NeuInsetBg
                         ) {
                             Column(
-                                modifier = Modifier.padding(8.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("الإجمالي الكلي", fontSize = 10.sp, color = NeuTextSecondary)
+                                Text("الإجمالي الكلي", fontSize = 9.sp, color = NeuTextSecondary)
                                 Text(
                                     "${formatter.format(totalSalesSum)} ${storeConfig.currencySymbol}",
-                                    fontSize = 13.5.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Black,
                                     color = NeuAccentBlue
                                 )
@@ -227,17 +221,17 @@ fun InvoiceHistoryScreen(
                         // Cash Card
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = NeuInsetBg
                         ) {
                             Column(
-                                modifier = Modifier.padding(8.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("نقداً", fontSize = 10.sp, color = NeuTextSecondary)
+                                Text("نقداً", fontSize = 9.sp, color = NeuTextSecondary)
                                 Text(
                                     formatter.format(totalCashSum),
-                                    fontSize = 13.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeuSuccess
                                 )
@@ -247,17 +241,17 @@ fun InvoiceHistoryScreen(
                         // Credit Card
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = NeuInsetBg
                         ) {
                             Column(
-                                modifier = Modifier.padding(8.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("آجل", fontSize = 10.sp, color = NeuTextSecondary)
+                                Text("آجل", fontSize = 9.sp, color = NeuTextSecondary)
                                 Text(
                                     formatter.format(totalCreditSum),
-                                    fontSize = 13.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = NeuError
                                 )
@@ -275,12 +269,12 @@ fun InvoiceHistoryScreen(
                     Text(
                         text = "لا توجد فواتير مسجلة في السجل حتى الآن.",
                         color = NeuTextMuted,
-                        fontSize = 13.sp
+                        fontSize = 12.sp
                     )
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredList, key = { it.invoice.invoiceId }) { item ->
@@ -289,61 +283,74 @@ fun InvoiceHistoryScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { selectedInvoiceForDetail = item },
-                            shape = RoundedCornerShape(18.dp),
-                            elevation = 6.dp,
-                            contentPadding = PaddingValues(12.dp)
+                            shape = RoundedCornerShape(11.dp),
+                            elevation = 3.dp,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    // Soft invoice badge
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = NeuInsetBg
-                                    ) {
-                                        Text(
-                                            text = "#${inv.invoiceNumber}",
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            color = NeuAccentBlue
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    NeuPillBadge(
+                                        text = "#${inv.invoiceNumber}",
+                                        fontSize = 10.sp,
+                                        textColor = NeuAccentBlue
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = inv.customerName,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 14.5.sp,
-                                        color = NeuTextPrimary
+                                        fontSize = 13.5.sp,
+                                        color = NeuTextPrimary,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                 }
 
                                 Text(
                                     text = "${formatter.format(inv.grandTotal)} ${storeConfig.currencySymbol}",
                                     fontWeight = FontWeight.Black,
-                                    fontSize = 15.sp,
+                                    fontSize = 13.5.sp,
                                     color = NeuAccentBlue
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "التاريخ: ${inv.dateString} | ${inv.paymentType} (${item.items.size} أصناف)",
-                                    fontSize = 11.5.sp,
-                                    color = NeuTextSecondary
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = inv.dateString,
+                                        fontSize = 10.sp,
+                                        color = NeuTextSecondary
+                                    )
+                                    NeuPillBadge(
+                                        text = inv.paymentType,
+                                        textColor = if (inv.paymentType.contains("نقداً")) NeuSuccess else NeuError,
+                                        backgroundColor = if (inv.paymentType.contains("نقداً")) NeuSuccess.copy(alpha = 0.12f) else NeuError.copy(alpha = 0.12f),
+                                        fontSize = 8.5.sp
+                                    )
+                                    Text(
+                                        text = "(${item.items.size} أصناف)",
+                                        fontSize = 9.5.sp,
+                                        color = NeuTextMuted
+                                    )
+                                }
 
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     // 1. PDF Share Button
@@ -362,17 +369,17 @@ fun InvoiceHistoryScreen(
                                                 Toast.makeText(context, "تعذر إنشاء ملف PDF", Toast.LENGTH_SHORT).show()
                                             }
                                         },
-                                        size = 32.dp
+                                        size = 28.dp
                                     ) {
-                                        Icon(AppIcons.Pdf, contentDescription = "مشاركة PDF", tint = NeuAccentBlue, modifier = Modifier.size(15.dp))
+                                        Icon(AppIcons.Pdf, contentDescription = "مشاركة PDF", tint = NeuAccentBlue, modifier = Modifier.size(13.dp))
                                     }
 
                                     // 2. Edit Button
                                     NeuCircleButton(
                                         onClick = { onEditInvoice(item) },
-                                        size = 32.dp
+                                        size = 28.dp
                                     ) {
-                                        Icon(Icons.Default.Edit, contentDescription = "تعديل", tint = NeuTextPrimary, modifier = Modifier.size(15.dp))
+                                        Icon(Icons.Default.Edit, contentDescription = "تعديل", tint = NeuTextPrimary, modifier = Modifier.size(13.dp))
                                     }
 
                                     // 3. Print Button
@@ -398,17 +405,17 @@ fun InvoiceHistoryScreen(
                                                 Toast.makeText(context, "خطأ في الطباعة: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                                             }
                                         },
-                                        size = 32.dp
+                                        size = 28.dp
                                     ) {
-                                        Icon(AppIcons.Print, contentDescription = "طباعة", tint = NeuTextPrimary, modifier = Modifier.size(15.dp))
+                                        Icon(AppIcons.Print, contentDescription = "طباعة", tint = NeuTextPrimary, modifier = Modifier.size(13.dp))
                                     }
 
                                     // 4. Delete Button
                                     NeuCircleButton(
                                         onClick = { viewModel.deleteInvoice(inv.invoiceId) },
-                                        size = 32.dp
+                                        size = 28.dp
                                     ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "حذف", tint = NeuError, modifier = Modifier.size(15.dp))
+                                        Icon(Icons.Default.Delete, contentDescription = "حذف", tint = NeuError, modifier = Modifier.size(13.dp))
                                     }
                                 }
                             }

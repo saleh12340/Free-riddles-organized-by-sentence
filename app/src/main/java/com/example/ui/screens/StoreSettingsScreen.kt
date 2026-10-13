@@ -154,41 +154,42 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(14.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // 1. BACKUP & RESTORE CARD (النسخ الاحتياطي والاستعادة)
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                contentPadding = PaddingValues(16.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 2.dp,
+                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 7.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeuBadge(size = 44.dp) {
-                        Icon(AppIcons.Backup, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(20.dp))
+                    NeuIconBox(size = 30.dp, shape = RoundedCornerShape(7.dp)) {
+                        Icon(AppIcons.Backup, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(16.dp))
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
                             text = "النسخ الاحتياطي واستعادة البيانات",
                             fontWeight = FontWeight.Bold,
                             color = NeuTextPrimary,
-                            fontSize = 15.sp
+                            fontSize = 13.5.sp
                         )
                         Text(
                             text = "حفظ ومزامنة الفواتير وقائمة الأصناف",
-                            fontSize = 11.5.sp,
+                            fontSize = 10.5.sp,
                             color = NeuTextSecondary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // Share / Export JSON
                     NeuButton(
@@ -207,13 +208,16 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                                 context.startActivity(shareIntent)
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp),
                         enabled = !isOperatingBackup,
+                        shape = RoundedCornerShape(7.dp),
                         isPrimary = true
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.White)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("مشاركة نسخة", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("مشاركة نسخة", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     // Save as file in storage
@@ -227,99 +231,115 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                                 exportFileLauncher.launch("Fatooraty_Backup_$dateStr.json")
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp),
                         enabled = !isOperatingBackup,
+                        shape = RoundedCornerShape(7.dp),
                         isPrimary = false
                     ) {
-                        Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuTextPrimary)
+                        Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuTextPrimary)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("حفظ كملف", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        Text("حفظ كملف", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Restore button
                 NeuButton(
                     onClick = {
                         importFileLauncher.launch("application/json")
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(34.dp),
+                    shape = RoundedCornerShape(7.dp),
                     isPrimary = false
                 ) {
-                    Icon(AppIcons.Restore, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuAccentBlue)
+                    Icon(AppIcons.Restore, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuAccentBlue)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("استعادة نسخة احتياطية من ملف (JSON)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
+                    Text("استعادة نسخة احتياطية من ملف (JSON)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
                 }
             }
 
             // 2. STORE NAME & LOGO
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                contentPadding = PaddingValues(16.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 2.dp,
+                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 7.dp)
             ) {
-                Text(
-                    text = "اسم المحل والتاجر",
-                    fontWeight = FontWeight.Bold,
-                    color = NeuAccentBlue,
-                    fontSize = 14.5.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeuIconBox(size = 26.dp, shape = RoundedCornerShape(6.dp)) {
+                        Icon(AppIcons.Store, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(14.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "اسم المحل والتاجر",
+                        fontWeight = FontWeight.Bold,
+                        color = NeuAccentBlue,
+                        fontSize = 13.sp
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                Text("اسم المحل / التاجر بالعربي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("اسم المحل / التاجر بالعربي:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = storeNameArabic,
                         onValueChange = { storeNameArabic = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                        textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (storeNameArabic.isEmpty()) {
-                                Text("مثال: بقالة العزي", color = NeuTextMuted, fontSize = 14.sp)
+                                Text("مثال: بقالة العزي", color = NeuTextMuted, fontSize = 12.sp)
                             }
                             inner()
                         }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                Text("اسم المحل بالإنجليزي (اختياري):", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("اسم المحل بالإنجليزي (اختياري):", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = storeNameEnglish,
                         onValueChange = { storeNameEnglish = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (storeNameEnglish.isEmpty()) {
-                                Text("مثال: Al-Ezzi Grocery", color = NeuTextMuted, fontSize = 14.sp)
+                                Text("مثال: Al-Ezzi Grocery", color = NeuTextMuted, fontSize = 12.sp)
                             }
                             inner()
                         }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                Text("النشاط / الوصف الإضافي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("النشاط / الوصف الإضافي:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = storeSubtitle,
                         onValueChange = { storeSubtitle = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (storeSubtitle.isEmpty()) {
-                                Text("مثال: مواد غذائية واستهلاكية", color = NeuTextMuted, fontSize = 14.sp)
+                                Text("مثال: مواد غذائية واستهلاكية", color = NeuTextMuted, fontSize = 12.sp)
                             }
                             inner()
                         }
@@ -330,70 +350,80 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
             // 3. CONTACT & ADDRESS
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                contentPadding = PaddingValues(16.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 2.dp,
+                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 7.dp)
             ) {
-                Text(
-                    text = "بيانات الاتصال والعنوان",
-                    fontWeight = FontWeight.Bold,
-                    color = NeuAccentBlue,
-                    fontSize = 14.5.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeuIconBox(size = 26.dp, shape = RoundedCornerShape(6.dp)) {
+                        Icon(AppIcons.Store, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(14.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "بيانات الاتصال والعنوان",
+                        fontWeight = FontWeight.Bold,
+                        color = NeuAccentBlue,
+                        fontSize = 13.sp
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                Text("رقم الهاتف / الجوال الأساسي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("رقم الهاتف / الجوال الأساسي:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = phone1,
                         onValueChange = { phone1 = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                        textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (phone1.isEmpty()) {
-                                Text("مثال: 772437314", color = NeuTextMuted, fontSize = 14.sp)
+                                Text("مثال: 772437314", color = NeuTextMuted, fontSize = 12.sp)
                             }
                             inner()
                         }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                Text("رقم هاتف إضافي (اختياري):", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("رقم هاتف إضافي (اختياري):", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = phone2,
                         onValueChange = { phone2 = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (phone2.isEmpty()) {
-                                Text("مثال: 770000000", color = NeuTextMuted, fontSize = 14.sp)
+                                Text("مثال: 770000000", color = NeuTextMuted, fontSize = 12.sp)
                             }
                             inner()
                         }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                Text("عنوان المحل:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("عنوان المحل:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = address,
                         onValueChange = { address = it },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (address.isEmpty()) {
-                                Text("صنعاء - شارع ...", color = NeuTextMuted, fontSize = 14.sp)
+                                Text("صنعاء - شارع ...", color = NeuTextMuted, fontSize = 12.sp)
                             }
                             inner()
                         }
@@ -404,35 +434,43 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
             // 4. INVOICE OPTIONS & CURRENCY
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                contentPadding = PaddingValues(16.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 2.dp,
+                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 7.dp)
             ) {
-                Text(
-                    text = "خيارات الفاتورة والعملة",
-                    fontWeight = FontWeight.Bold,
-                    color = NeuAccentBlue,
-                    fontSize = 14.5.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeuIconBox(size = 26.dp, shape = RoundedCornerShape(6.dp)) {
+                        Icon(AppIcons.Receipt, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(14.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "خيارات الفاتورة والعملة",
+                        fontWeight = FontWeight.Bold,
+                        color = NeuAccentBlue,
+                        fontSize = 13.sp
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("رمز العملة:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                        NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                        Text("رمز العملة:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(2.dp))
+                        NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                             BasicTextField(
                                 value = currencySymbol,
                                 onValueChange = { currencySymbol = it },
                                 singleLine = true,
-                                textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                                textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
                                 cursorBrush = SolidColor(NeuAccentBlue),
                                 modifier = Modifier.fillMaxWidth(),
                                 decorationBox = { inner ->
                                     if (currencySymbol.isEmpty()) {
-                                        Text("ر.ي", color = NeuTextMuted, fontSize = 14.sp)
+                                        Text("ر.ي", color = NeuTextMuted, fontSize = 12.sp)
                                     }
                                     inner()
                                 }
@@ -441,18 +479,19 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("رقم التسلسل التالي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                        NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                        Text("رقم التسلسل التالي:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(2.dp))
+                        NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                             BasicTextField(
                                 value = nextInvoiceNumberStr,
                                 onValueChange = { nextInvoiceNumberStr = it },
                                 singleLine = true,
-                                textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                                textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
                                 cursorBrush = SolidColor(NeuAccentBlue),
                                 modifier = Modifier.fillMaxWidth(),
                                 decorationBox = { inner ->
                                     if (nextInvoiceNumberStr.isEmpty()) {
-                                        Text("1001", color = NeuTextMuted, fontSize = 14.sp)
+                                        Text("1001", color = NeuTextMuted, fontSize = 12.sp)
                                     }
                                     inner()
                                 }
@@ -461,14 +500,15 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                Text("ملاحظة وتعهد أسفل الفاتورة:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                Text("ملاحظة وتعهد أسفل الفاتورة:", fontSize = 11.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     BasicTextField(
                         value = defaultDisclaimerNote,
                         onValueChange = { defaultDisclaimerNote = it },
-                        textStyle = TextStyle(fontSize = 13.5.sp, color = NeuTextPrimary),
+                        textStyle = TextStyle(fontSize = 12.sp, color = NeuTextPrimary),
                         cursorBrush = SolidColor(NeuAccentBlue),
                         minLines = 2,
                         modifier = Modifier.fillMaxWidth()
@@ -476,7 +516,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(70.dp))
         }
     }
 

@@ -168,35 +168,36 @@ fun NewInvoiceScreen(
             NeuCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(22.dp),
-                contentPadding = PaddingValues(10.dp)
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = 3.dp,
+                contentPadding = PaddingValues(6.dp)
             ) {
                 // Grand Total Display (Sunken Neumorphic Box with Discount field)
                 NeuInsetBox(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(9.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "خصم:",
-                                fontSize = 11.5.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeuTextSecondary
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Surface(
                                 modifier = Modifier
-                                    .width(68.dp)
-                                    .height(30.dp),
-                                shape = RoundedCornerShape(8.dp),
+                                    .width(62.dp)
+                                    .height(26.dp),
+                                shape = RoundedCornerShape(6.dp),
                                 color = NeuSurfaceRaised
                             ) {
                                 Box(
@@ -208,7 +209,7 @@ fun NewInvoiceScreen(
                                         onValueChange = { viewModel.discountAmountStr = it.toEnglishDigits() },
                                         singleLine = true,
                                         textStyle = TextStyle(
-                                            fontSize = 12.sp,
+                                            fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = NeuError,
                                             textAlign = TextAlign.Center
@@ -217,7 +218,7 @@ fun NewInvoiceScreen(
                                         cursorBrush = SolidColor(NeuAccentBlue),
                                         decorationBox = { inner ->
                                             if (viewModel.discountAmountStr.isEmpty()) {
-                                                Text("0.0", fontSize = 11.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
+                                                Text("0.0", fontSize = 10.5.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
                                             }
                                             inner()
                                         }
@@ -230,36 +231,39 @@ fun NewInvoiceScreen(
                             if (viewModel.getDiscountAmount() > 0) {
                                 Text(
                                     text = "قبل الخصم: ${formatter.format(viewModel.calculateSubtotal())}",
-                                    fontSize = 10.sp,
+                                    fontSize = 9.5.sp,
                                     color = NeuTextSecondary
                                 )
                             }
                             Text(
                                 text = "${formatter.format(viewModel.calculateGrandTotal())} ${storeConfig.currencySymbol}",
                                 fontWeight = FontWeight.Black,
-                                fontSize = 17.5.sp,
+                                fontSize = 15.5.sp,
                                 color = NeuAccentBlue
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                // Neumorphic Action Buttons
+                // Neumorphic Action Buttons (Compact)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // 1. Save Button (Soft Raised)
                     NeuButton(
                         onClick = { viewModel.saveInvoiceToDatabase() },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp),
+                        shape = RoundedCornerShape(8.dp),
                         isPrimary = false
                     ) {
-                        Icon(AppIcons.Save, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuTextPrimary)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("حفظ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        Icon(AppIcons.Save, contentDescription = null, modifier = Modifier.size(15.dp), tint = NeuTextPrimary)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("حفظ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
 
                     // 2. Thermal Print Button (Vibrant #0072ff Glow)
@@ -285,23 +289,29 @@ fun NewInvoiceScreen(
                                 Toast.makeText(context, "تعذر تجهيز الفاتورة للطباعة: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                             }
                         },
-                        modifier = Modifier.weight(1.3f),
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .height(34.dp),
+                        shape = RoundedCornerShape(8.dp),
                         isPrimary = true
                     ) {
-                        Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("طباعة حرارية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(15.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("طباعة حرارية", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     // 3. Save / Share Image
                     NeuButton(
                         onClick = { showPreviewDialog = true },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp),
+                        shape = RoundedCornerShape(8.dp),
                         isPrimary = false
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuAccentBlue)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("مشاركة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(15.dp), tint = NeuAccentBlue)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("مشاركة", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
                 }
             }
@@ -724,23 +734,23 @@ fun QuickItemRulerBar(
         }
     }
 
-    // 1. Single Horizontal Ruler Row + Full Width Add Button underneath
+    // 1. Single Horizontal Ruler Row + Full Width Add Button underneath (Compact)
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(10.dp),
         color = NeuSurfaceRaised,
-        shadowElevation = 3.dp,
+        shadowElevation = 2.dp,
         border = BorderStroke(0.8.dp, NeuAccentBlue.copy(alpha = 0.25f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 1. المربع الأول: القيمة الإجمالية
@@ -836,21 +846,24 @@ fun QuickItemRulerBar(
             // Full-width Add Button underneath the input boxes spanning the entire width
             NeuButton(
                 onClick = { submitItem() },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(31.dp),
+                shape = RoundedCornerShape(7.dp),
                 isPrimary = true
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "إضافة الصنف",
                     tint = Color.White,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(15.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "إضافة الصنف إلى الفاتورة",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
+                    fontSize = 11.5.sp
                 )
             }
         }
@@ -872,11 +885,11 @@ private fun SmartRulerInputBox(
     var isFocused by remember { mutableStateOf(false) }
 
     Surface(
-        modifier = modifier.height(34.dp),
-        shape = RoundedCornerShape(10.dp),
+        modifier = modifier.height(31.dp),
+        shape = RoundedCornerShape(7.dp),
         color = if (isFocused) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
         border = BorderStroke(
-            width = if (isFocused) 1.4.dp else 0.8.dp,
+            width = if (isFocused) 1.2.dp else 0.8.dp,
             color = if (isFocused) NeuAccentBlue else Color(0xFFCBD5E1)
         )
     ) {

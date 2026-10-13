@@ -51,14 +51,15 @@ val NeuError = Color(0xFFEF4444)             // Soft crimson alert
 
 /**
  * Raised Neumorphic Card with soft dual elevation and top-left light border highlight.
+ * Compact and sleek to fit content, icons, and texts crisply without wasted space.
  */
 @Composable
 fun NeuCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = RoundedCornerShape(13.dp),
     backgroundColor: Color = NeuSurface,
-    elevation: Dp = 8.dp,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
+    elevation: Dp = 5.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     Box(
@@ -66,14 +67,14 @@ fun NeuCard(
             .shadow(
                 elevation = elevation,
                 shape = shape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.55f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.70f)
+                ambientColor = NeuDarkShadow.copy(alpha = 0.45f),
+                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
             )
             .clip(shape)
             .background(backgroundColor)
             .border(
                 border = BorderStroke(
-                    width = 1.2.dp,
+                    width = 1.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             NeuLightHighlight.copy(alpha = 0.95f),
@@ -91,12 +92,12 @@ fun NeuCard(
 }
 
 /**
- * Sunken / Inset Neumorphic Box for TextFields and debossed controls (like the email/password fields in screenshot).
+ * Sunken / Inset Neumorphic Box for TextFields and debossed controls.
  */
 @Composable
 fun NeuInsetBox(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(10.dp),
     backgroundColor: Color = NeuInsetBg,
     contentAlignment: Alignment = Alignment.CenterStart,
     content: @Composable BoxScope.() -> Unit
@@ -107,7 +108,7 @@ fun NeuInsetBox(
             .background(backgroundColor)
             .border(
                 border = BorderStroke(
-                    width = 1.2.dp,
+                    width = 1.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             NeuInsetBorder.copy(alpha = 0.85f),
@@ -118,31 +119,31 @@ fun NeuInsetBox(
                 ),
                 shape = shape
             )
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = contentAlignment,
         content = content
     )
 }
 
 /**
- * Primary Neumorphic Button with vibrant blue gradient and soft blue drop glow (matches .switch-circle and login button).
+ * Primary Neumorphic Button with vibrant blue gradient and soft blue drop glow.
  */
 @Composable
 fun NeuButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(10.dp),
     isPrimary: Boolean = true,
     content: @Composable RowScope.() -> Unit
 ) {
     val bgModifier = if (isPrimary) {
         Modifier
             .shadow(
-                elevation = 8.dp,
+                elevation = 6.dp,
                 shape = shape,
                 ambientColor = NeuAccentBlueGlow,
-                spotColor = NeuAccentBlue.copy(alpha = 0.50f)
+                spotColor = NeuAccentBlue.copy(alpha = 0.45f)
             )
             .clip(shape)
             .background(
@@ -156,16 +157,16 @@ fun NeuButton(
     } else {
         Modifier
             .shadow(
-                elevation = 6.dp,
+                elevation = 4.dp,
                 shape = shape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.50f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
+                ambientColor = NeuDarkShadow.copy(alpha = 0.45f),
+                spotColor = NeuDarkShadow.copy(alpha = 0.55f)
             )
             .clip(shape)
             .background(NeuSurfaceRaised)
             .border(
                 border = BorderStroke(
-                    width = 1.2.dp,
+                    width = 1.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             NeuLightHighlight.copy(alpha = 0.95f),
@@ -185,7 +186,7 @@ fun NeuButton(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple()
             ) { onClick() }
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -197,23 +198,23 @@ fun NeuButton(
 }
 
 /**
- * Circular Neumorphic Action Button (matches the circular .switch-circle button in user's screenshot).
+ * Circular Neumorphic Action Button.
  */
 @Composable
 fun NeuCircleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 48.dp,
+    size: Dp = 36.dp,
     isPrimary: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     val bgModifier = if (isPrimary) {
         Modifier
             .shadow(
-                elevation = 8.dp,
+                elevation = 6.dp,
                 shape = CircleShape,
                 ambientColor = NeuAccentBlueGlow,
-                spotColor = NeuAccentBlue.copy(alpha = 0.50f)
+                spotColor = NeuAccentBlue.copy(alpha = 0.45f)
             )
             .clip(CircleShape)
             .background(
@@ -227,16 +228,16 @@ fun NeuCircleButton(
     } else {
         Modifier
             .shadow(
-                elevation = 6.dp,
+                elevation = 4.dp,
                 shape = CircleShape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.55f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.65f)
+                ambientColor = NeuDarkShadow.copy(alpha = 0.50f),
+                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
             )
             .clip(CircleShape)
             .background(NeuSurfaceRaised)
             .border(
                 border = BorderStroke(
-                    width = 1.2.dp,
+                    width = 1.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             NeuLightHighlight.copy(alpha = 0.95f),
@@ -262,28 +263,28 @@ fun NeuCircleButton(
 }
 
 /**
- * Neumorphic Badge / Icon Container (like the top lock circle in user's screenshot).
+ * Neumorphic Badge / Icon Container.
  */
 @Composable
 fun NeuBadge(
     modifier: Modifier = Modifier,
-    size: Dp = 54.dp,
+    size: Dp = 36.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
             .size(size)
             .shadow(
-                elevation = 6.dp,
+                elevation = 4.dp,
                 shape = CircleShape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.55f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.65f)
+                ambientColor = NeuDarkShadow.copy(alpha = 0.50f),
+                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
             )
             .clip(CircleShape)
             .background(NeuSurface)
             .border(
                 border = BorderStroke(
-                    width = 1.5.dp,
+                    width = 1.2.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             NeuLightHighlight,
@@ -296,4 +297,63 @@ fun NeuBadge(
         contentAlignment = Alignment.Center,
         content = content
     )
+}
+
+/**
+ * Compact Icon Box to neatly contain symbols/icons inside cards and rows.
+ */
+@Composable
+fun NeuIconBox(
+    modifier: Modifier = Modifier,
+    size: Dp = 32.dp,
+    shape: Shape = RoundedCornerShape(8.dp),
+    backgroundColor: Color = NeuSurfaceRaised,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .background(backgroundColor)
+            .border(
+                border = BorderStroke(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            NeuLightHighlight.copy(alpha = 0.95f),
+                            NeuDarkShadow.copy(alpha = 0.25f)
+                        )
+                    )
+                ),
+                shape = shape
+            ),
+        contentAlignment = Alignment.Center,
+        content = content
+    )
+}
+
+/**
+ * Sleek compact pill badge for status, quantities, chips, and counters.
+ */
+@Composable
+fun NeuPillBadge(
+    text: String,
+    modifier: Modifier = Modifier,
+    textColor: Color = NeuAccentBlue,
+    backgroundColor: Color = NeuInsetBg,
+    fontSize: androidx.compose.ui.unit.TextUnit = 10.sp
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(6.dp),
+        color = backgroundColor
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            fontSize = fontSize,
+            fontWeight = FontWeight.Bold,
+            color = textColor
+        )
+    }
 }

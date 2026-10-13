@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -83,14 +84,14 @@ fun CustomersScreen(
         floatingActionButton = {
             NeuCircleButton(
                 onClick = { showAddCustomerDialog = true },
-                size = 56.dp,
+                size = 46.dp,
                 isPrimary = true
             ) {
                 Icon(
                     Icons.Default.Add,
                     contentDescription = "إضافة عميل جديد",
                     tint = Color.White,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -99,51 +100,58 @@ fun CustomersScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("إدارة العملاء والحسابات", fontSize = 19.sp, fontWeight = FontWeight.Black, color = NeuTextPrimary)
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = NeuSurfaceRaised
-                ) {
-                    Text(
-                        "${customers.size} عميل",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeuAccentBlue
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeuIconBox(size = 30.dp) {
+                        Icon(AppIcons.Person, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text("إدارة العملاء والحسابات", fontSize = 15.sp, fontWeight = FontWeight.Black, color = NeuTextPrimary)
                 }
+                NeuPillBadge(
+                    text = "${customers.size.toEnglishString()} عميل",
+                    fontSize = 11.sp,
+                    textColor = NeuAccentBlue
+                )
             }
 
-            Surface(shape = RoundedCornerShape(14.dp), color = NeuSurfaceRaised) {
+            // Compact Sunken Search Box
+            NeuInsetBox(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp)
+            ) {
                 Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Search, null, tint = NeuTextMuted)
-                    Spacer(Modifier.width(8.dp))
-                    TextField(
+                    Icon(Icons.Default.Search, null, tint = NeuTextMuted, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    BasicTextField(
                         value = query,
                         onValueChange = { query = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("ابحث عن اسم العميل...", fontSize = 13.sp) },
                         singleLine = true,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        )
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.5.sp, color = NeuTextPrimary),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(NeuAccentBlue),
+                        decorationBox = { inner ->
+                            if (query.isEmpty()) {
+                                Text("ابحث عن اسم العميل...", fontSize = 12.sp, color = NeuTextMuted)
+                            }
+                            inner()
+                        }
                     )
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }, modifier = Modifier.size(20.dp)) {
+                            Icon(AppIcons.Clear, contentDescription = "مسح", tint = NeuTextMuted, modifier = Modifier.size(14.dp))
+                        }
+                    }
                 }
             }
 
@@ -155,16 +163,16 @@ fun CustomersScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(AppIcons.Store, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(48.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text("لا يوجد عملاء حالياً", fontSize = 14.sp, color = NeuTextSecondary)
-                        Spacer(Modifier.height(4.dp))
-                        Text("اضغط على زر (+) في الأسفل لإضافة عميل جديد", fontSize = 12.sp, color = NeuTextMuted)
+                        Icon(AppIcons.Store, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(38.dp))
+                        Spacer(Modifier.height(6.dp))
+                        Text("لا يوجد عملاء حالياً", fontSize = 13.sp, color = NeuTextSecondary)
+                        Spacer(Modifier.height(2.dp))
+                        Text("اضغط على زر (+) لإضافة عميل جديد", fontSize = 11.sp, color = NeuTextMuted)
                     }
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(customers, key = { it.first }) { triple ->
@@ -177,33 +185,73 @@ fun CustomersScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { selectedCustomer = name },
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(13.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = 3.dp,
+                            contentPadding = PaddingValues(horizontal = 9.dp, vertical = 7.dp)
                         ) {
                             Row(
                                 Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
-                                    Text(
-                                        "${list.size.toEnglishString()} فاتورة • سندات القبض: ${receiptsList.size.toEnglishString()}",
-                                        fontSize = 11.sp,
-                                        color = NeuTextSecondary
-                                    )
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    NeuIconBox(
+                                        size = 32.dp,
+                                        shape = RoundedCornerShape(8.dp),
+                                        backgroundColor = if (netBalance > 0) NeuAccentBlue.copy(alpha = 0.12f) else NeuSuccess.copy(alpha = 0.12f)
+                                    ) {
+                                        Icon(
+                                            AppIcons.Person,
+                                            contentDescription = null,
+                                            tint = if (netBalance > 0) NeuAccentBlue else NeuSuccess,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            name,
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = NeuTextPrimary,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
+                                        Spacer(Modifier.height(2.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            NeuPillBadge(
+                                                text = "${list.size.toEnglishString()} فاتورة",
+                                                fontSize = 9.sp,
+                                                textColor = NeuAccentBlue
+                                            )
+                                            NeuPillBadge(
+                                                text = "${receiptsList.size.toEnglishString()} سندات",
+                                                backgroundColor = NeuSuccess.copy(alpha = 0.12f),
+                                                textColor = NeuSuccess,
+                                                fontSize = 9.sp
+                                            )
+                                        }
+                                    }
                                 }
+
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         "${formatter.format(netBalance)} ${config?.currencySymbol ?: "ر.ي"}",
-                                        fontSize = 16.sp,
+                                        fontSize = 13.5.sp,
                                         fontWeight = FontWeight.Black,
                                         color = if (netBalance > 0) NeuAccentBlue else NeuSuccess
                                     )
                                     Text(
                                         if (netBalance > 0) "المتبقي عليه" else if (netBalance < 0) "له رصيد" else "خالص الحساب",
-                                        fontSize = 9.5.sp,
-                                        color = NeuTextSecondary
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (netBalance > 0) NeuAccentBlue else NeuSuccess
                                     )
                                 }
                             }

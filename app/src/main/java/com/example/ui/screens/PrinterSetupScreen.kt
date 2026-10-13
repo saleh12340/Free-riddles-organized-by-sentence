@@ -113,22 +113,30 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // STATUS BANNER (Neumorphic Card with Central Badge like the lock in screenshot)
+            // STATUS BANNER (Compact Neumorphic Card)
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                contentPadding = PaddingValues(16.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 3.dp,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Soft UI Icon Badge
-                    NeuBadge(size = 52.dp) {
+                    NeuIconBox(
+                        size = 34.dp,
+                        shape = RoundedCornerShape(8.dp),
+                        backgroundColor = when (printerState) {
+                            is PrinterConnectionState.Connected -> NeuSuccess.copy(alpha = 0.12f)
+                            is PrinterConnectionState.Connecting -> NeuAccentBlue.copy(alpha = 0.12f)
+                            else -> NeuInsetBg
+                        }
+                    ) {
                         Icon(
                             AppIcons.Bluetooth,
                             contentDescription = null,
@@ -137,17 +145,17 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                                 is PrinterConnectionState.Connecting -> NeuAccentBlue
                                 else -> NeuTextMuted
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "حالة الاتصال بالطابعة:",
-                            fontSize = 11.5.sp,
+                            fontSize = 10.sp,
                             color = NeuTextSecondary
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
                             text = when (val state = printerState) {
                                 is PrinterConnectionState.Connected -> "متصل بالطابعة: ${state.deviceName}"
@@ -156,73 +164,82 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                                 else -> "غير متصل بالطابعة"
                             },
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.5.sp,
+                            fontSize = 12.5.sp,
                             color = when (printerState) {
                                 is PrinterConnectionState.Connected -> NeuSuccess
                                 is PrinterConnectionState.Error -> NeuError
                                 else -> NeuTextPrimary
-                            }
+                            },
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
 
                     if (printerState is PrinterConnectionState.Connected) {
                         NeuButton(
                             onClick = { viewModel.bluetoothPrinterManager.disconnect() },
+                            modifier = Modifier.height(30.dp),
+                            shape = RoundedCornerShape(6.dp),
                             isPrimary = false
                         ) {
-                            Text("قطع", fontSize = 11.sp, color = NeuError, fontWeight = FontWeight.Bold)
+                            Text("قطع", fontSize = 10.5.sp, color = NeuError, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
-            // PAPER SIZE SELECTOR (58mm vs 80mm POS)
+            // PAPER SIZE SELECTOR (Compact)
             NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(14.dp)
+                shape = RoundedCornerShape(11.dp),
+                elevation = 2.dp,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
             ) {
-                Text(
-                    text = "عرض ورق الطابعة الحرارية:",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.5.sp,
-                    color = NeuTextPrimary
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    NeuButton(
-                        onClick = { selectedPaperWidthDots = 384 },
-                        modifier = Modifier.weight(1f),
-                        isPrimary = selectedPaperWidthDots == 384
-                    ) {
-                        Text(
-                            text = "ورق 58 مم (POS-58)",
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (selectedPaperWidthDots == 384) Color.White else NeuTextPrimary
-                        )
-                    }
+                    Text(
+                        text = "عرض الورق الحراري:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp,
+                        color = NeuTextPrimary
+                    )
 
-                    NeuButton(
-                        onClick = { selectedPaperWidthDots = 576 },
-                        modifier = Modifier.weight(1f),
-                        isPrimary = selectedPaperWidthDots == 576
-                    ) {
-                        Text(
-                            text = "ورق 80 مم (POS-80)",
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (selectedPaperWidthDots == 576) Color.White else NeuTextPrimary
-                        )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        NeuButton(
+                            onClick = { selectedPaperWidthDots = 384 },
+                            modifier = Modifier.height(30.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            isPrimary = selectedPaperWidthDots == 384
+                        ) {
+                            Text(
+                                text = "58 مم",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selectedPaperWidthDots == 384) Color.White else NeuTextPrimary
+                            )
+                        }
+
+                        NeuButton(
+                            onClick = { selectedPaperWidthDots = 576 },
+                            modifier = Modifier.height(30.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            isPrimary = selectedPaperWidthDots == 576
+                        ) {
+                            Text(
+                                text = "80 مم",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selectedPaperWidthDots == 576) Color.White else NeuTextPrimary
+                            )
+                        }
                     }
                 }
             }
 
-            // TEST PRINT BUTTON
+            // TEST PRINT BUTTON (Compact)
             NeuButton(
                 onClick = {
                     val testBitmap = ReceiptBitmapHelper.createReceiptBitmap(
@@ -246,13 +263,16 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                     )
                     viewModel.printInvoiceAsBitmap(testBitmap)
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp),
                 enabled = printerState is PrinterConnectionState.Connected,
+                shape = RoundedCornerShape(8.dp),
                 isPrimary = true
             ) {
-                Icon(AppIcons.Print, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(AppIcons.Print, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("طباعة فاتورة تجريبية كصورة", fontWeight = FontWeight.Bold, color = Color.White)
+                Text("طباعة فاتورة تجريبية كصورة", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 11.5.sp)
             }
 
             // DEVICE LIST HEADER
@@ -264,33 +284,33 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                 Text(
                     text = "الأجهزة المقترنة بالهاتف (${pairedDevices.size}):",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
                     color = NeuTextPrimary
                 )
 
                 NeuCircleButton(
                     onClick = { pairedDevices = viewModel.bluetoothPrinterManager.getPairedDevices() },
-                    size = 36.dp
+                    size = 30.dp
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "تحديث", tint = NeuAccentBlue, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Refresh, contentDescription = "تحديث", tint = NeuAccentBlue, modifier = Modifier.size(15.dp))
                 }
             }
 
             if (pairedDevices.isEmpty()) {
                 NeuCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(16.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(8.dp)
                 ) {
                     Text(
-                        text = "لا توجد أجهزة بلوتوث مقترنة. يرجى التوجه لإعدادات الهاتف، وتشغيل البلوتوث والاقتران بالطابعة أولاً.",
+                        text = "لا توجد أجهزة بلوتوث مقترنة. يرجى التوجه لإعدادات الهاتف والاقتران بالطابعة أولاً.",
                         color = NeuTextSecondary,
-                        fontSize = 12.5.sp
+                        fontSize = 11.sp
                     )
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(pairedDevices) { device ->
@@ -302,9 +322,9 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                                         viewModel.bluetoothPrinterManager.connectToDevice(device)
                                     }
                                 },
-                            shape = RoundedCornerShape(18.dp),
-                            elevation = 4.dp,
-                            contentPadding = PaddingValues(12.dp)
+                            shape = RoundedCornerShape(10.dp),
+                            elevation = 2.dp,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -313,22 +333,25 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    NeuBadge(size = 40.dp) {
-                                        Icon(AppIcons.Print, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(18.dp))
+                                    NeuIconBox(size = 30.dp, shape = RoundedCornerShape(6.dp)) {
+                                        Icon(AppIcons.Print, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(16.dp))
                                     }
 
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = device.name ?: "طابعة غير معروفة",
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            color = NeuTextPrimary
+                                            fontSize = 13.sp,
+                                            color = NeuTextPrimary,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = device.address,
-                                            fontSize = 11.5.sp,
+                                            fontSize = 10.sp,
                                             color = NeuTextMuted
                                         )
                                     }
@@ -340,9 +363,11 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                                             viewModel.bluetoothPrinterManager.connectToDevice(device)
                                         }
                                     },
+                                    modifier = Modifier.height(28.dp),
+                                    shape = RoundedCornerShape(6.dp),
                                     isPrimary = false
                                 ) {
-                                    Text("اتصال", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
+                                    Text("اتصال", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
                                 }
                             }
                         }
