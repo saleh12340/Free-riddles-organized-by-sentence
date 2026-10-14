@@ -70,10 +70,10 @@ fun NewInvoiceScreen(
     val formatter = DecimalFormat("#,##0.##")
     val customerSuggestions = remember(allInvoices, viewModel.customerName) {
         val q = viewModel.customerName.trim()
-        if (q.isBlank()) emptyList() else allInvoices.asSequence()
+        allInvoices.asSequence()
             .map { it.invoice.customerName.trim() }
-            .filter { it.isNotBlank() && it != "عميل نقدي" && it.contains(q, ignoreCase = true) }
-            .distinct()
+            .filter { it.isNotBlank() && it != "عميل نقدي" && (q.isBlank() || it.contains(q, ignoreCase = true)) }
+            .distinctBy { it.lowercase(Locale.ROOT) }
             .take(4)
             .toList()
     }
@@ -194,7 +194,7 @@ fun NewInvoiceScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "خصم:",
+                                text = "المبلغ الواصل:",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeuTextSecondary
@@ -212,20 +212,20 @@ fun NewInvoiceScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     BasicTextField(
-                                        value = viewModel.discountAmountStr,
-                                        onValueChange = { viewModel.discountAmountStr = it.toEnglishDigits() },
+                                        value = viewModel.receivedAmountStr,
+                                        onValueChange = { viewModel.receivedAmountStr = it.toEnglishDigits() },
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = NeuError,
+                                            color = NeuSuccess,
                                             textAlign = TextAlign.Center
                                         ),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                         cursorBrush = SolidColor(NeuAccentBlue),
                                         decorationBox = { inner ->
-                                            if (viewModel.discountAmountStr.isEmpty()) {
-                                                Text("0.0", fontSize = 10.5.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
+                                            if (viewModel.receivedAmountStr.isEmpty()) {
+                                                Text("0", fontSize = 10.5.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
                                             }
                                             inner()
                                         }
@@ -235,9 +235,9 @@ fun NewInvoiceScreen(
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
-                            if (viewModel.getDiscountAmount() > 0) {
+                            if (viewModel.getReceivedAmount() > 0) {
                                 Text(
-                                    text = "قبل الخصم: ${formatter.format(viewModel.calculateSubtotal())}",
+                                    text = "المتبقي: ${formatter.format((viewModel.calculateGrandTotal() - viewModel.getReceivedAmount()).coerceAtLeast(0.0))}",
                                     fontSize = 9.5.sp,
                                     color = NeuTextSecondary
                                 )
