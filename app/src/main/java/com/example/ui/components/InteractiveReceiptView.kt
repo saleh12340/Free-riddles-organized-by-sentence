@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.StoreConfigEntity
-import com.example.ui.viewmodels.DualReceiptRow
+import com.example.ui.viewmodels.ReceiptRow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -176,13 +176,10 @@ fun InteractiveReceiptView(
     onCustomerNameChange: (String) -> Unit,
     paymentType: String,
     onPaymentTypeChange: (String) -> Unit,
-    dualRows: List<DualReceiptRow>,
-    onUpdateRightDescription: (index: Int, desc: String) -> Unit,
-    onUpdateRightQuantity: (index: Int, qty: String) -> Unit,
-    onUpdateRightTotalAmount: (index: Int, total: String) -> Unit,
-    onUpdateLeftDescription: (index: Int, desc: String) -> Unit,
-    onUpdateLeftQuantity: (index: Int, qty: String) -> Unit,
-    onUpdateLeftTotalAmount: (index: Int, total: String) -> Unit,
+    rows: List<ReceiptRow>,
+    onUpdateDescription: (index: Int, desc: String) -> Unit,
+    onUpdateQuantity: (index: Int, qty: String) -> Unit,
+    onUpdateTotalAmount: (index: Int, total: String) -> Unit,
     onRemoveRow: (index: Int) -> Unit,
     onAddManualRow: () -> Unit,
     customerSuggestions: List<String> = emptyList(),
@@ -192,9 +189,8 @@ fun InteractiveReceiptView(
 ) {
     val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
-    val rightSubtotal = dualRows.sumOf { it.rightTotal }
-    val leftSubtotal = dualRows.sumOf { it.leftTotal }
-    val grandTotal = rightSubtotal + leftSubtotal
+    val subtotal = rows.sumOf { it.total }
+    val grandTotal = subtotal
 
     Box(
         modifier = modifier
@@ -399,9 +395,9 @@ fun InteractiveReceiptView(
                 HeaderCell("م", 0.35f)
             }
 
-            dualRows.forEachIndexed { index, row ->
-                val qty = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
-                val tot = row.rightTotal
+            rows.forEachIndexed { index, row ->
+                val qty = (row.quantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                val tot = row.total
                 val unitPrice = if (qty > 0.0 && tot > 0.0) tot / qty else 0.0
 
                 Row(
@@ -411,7 +407,7 @@ fun InteractiveReceiptView(
                         .clip(RoundedCornerShape(6.dp))
                         .border(
                             0.6.dp,
-                            if (row.hasRightData) ReceiptInkNavy.copy(alpha = 0.35f) else Color(0xFFE2E8F0),
+                            if (row.hasData) ReceiptInkNavy.copy(alpha = 0.35f) else Color(0xFFE2E8F0),
                             RoundedCornerShape(6.dp)
                         )
                         .background(if (index % 2 == 0) Color.White else Color(0xFFF8FAFC)),
@@ -419,8 +415,8 @@ fun InteractiveReceiptView(
                 ) {
                     // 1. الإجمالي
                     DataCell(
-                        value = row.rightTotalAmountStr.toEnglishDigits(),
-                        onValueChange = { onUpdateRightTotalAmount(index, it.toEnglishDigits()) },
+                        value = row.totalAmountStr.toEnglishDigits(),
+                        onValueChange = { onUpdateTotalAmount(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
                         weight = 0.95f,
                         isNumeric = true,
@@ -430,16 +426,16 @@ fun InteractiveReceiptView(
                     )
                     // 2. العدد
                     DataCell(
-                        value = formatQuantity(row.rightQuantityStr),
-                        onValueChange = { onUpdateRightQuantity(index, it.toEnglishDigits()) },
+                        value = formatQuantity(row.quantityStr),
+                        onValueChange = { onUpdateQuantity(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
                         weight = 0.50f,
                         isNumeric = true
                     )
                     // 3. التفاصيل
                     DataCell(
-                        value = row.rightDescription,
-                        onValueChange = { onUpdateRightDescription(index, it) },
+                        value = row.description,
+                        onValueChange = { onUpdateDescription(index, it) },
                         isEditable = isEditable,
                         weight = 2.10f,
                         align = TextAlign.Start,
@@ -479,7 +475,7 @@ fun InteractiveReceiptView(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "إجمالي الأصناف: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}",
+                    text = "إجمالي الأصناف: ${formatter.format(subtotal)} ${storeConfig.currencySymbol}",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = ReceiptInkBlueAccent,

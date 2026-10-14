@@ -27,20 +27,15 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-data class DualReceiptRow(
+data class ReceiptRow(
     val id: String = UUID.randomUUID().toString(),
-    var rightDescription: String = "",
-    var rightQuantityStr: String = "1",
-    var rightTotalAmountStr: String = "",
-    var leftDescription: String = "",
-    var leftQuantityStr: String = "1",
-    var leftTotalAmountStr: String = ""
+    var description: String = "",
+    var quantityStr: String = "1",
+    var totalAmountStr: String = ""
 ) {
-    val rightTotal: Double get() = rightTotalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
-    val leftTotal: Double get() = leftTotalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
-    val hasRightData: Boolean get() = rightDescription.isNotBlank() || rightTotalAmountStr.isNotBlank()
-    val hasLeftData: Boolean get() = leftDescription.isNotBlank() || leftTotalAmountStr.isNotBlank()
-    val isCompletelyEmpty: Boolean get() = !hasRightData && !hasLeftData
+    val total: Double get() = totalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+    val hasData: Boolean get() = description.isNotBlank() || totalAmountStr.isNotBlank()
+    val isCompletelyEmpty: Boolean get() = !hasData
 }
 
 class InvoiceViewModel(application: Application) : AndroidViewModel(application) {
@@ -84,8 +79,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     var notes by mutableStateOf("")
     var discountAmountStr by mutableStateOf("")
 
-    // Smart expanding dual-column rows: Starts with DEFAULT_ROW_COUNT
-    val dualRows = mutableStateListOf<DualReceiptRow>()
+    // Single-column expanding rows: Starts with DEFAULT_ROW_COUNT
+    val receiptRows = mutableStateListOf<ReceiptRow>()
 
     var searchQuery by mutableStateOf("")
 
@@ -99,9 +94,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     init {
         viewModelScope.launch {
             invoiceNumber = repository.getNextInvoiceNumber()
-            if (dualRows.isEmpty()) {
+            if (receiptRows.isEmpty()) {
                 repeat(DEFAULT_ROW_COUNT) {
-                    dualRows.add(DualReceiptRow())
+                    receiptRows.add(ReceiptRow())
                 }
             }
         }
@@ -119,79 +114,54 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             paymentType = "نقداً"
             notes = ""
             discountAmountStr = ""
-            dualRows.clear()
+            receiptRows.clear()
             repeat(DEFAULT_ROW_COUNT) {
-                dualRows.add(DualReceiptRow())
+                receiptRows.add(ReceiptRow())
             }
         }
     }
 
     private fun checkAutoExpand(editedIndex: Int) {
-        if (editedIndex !in dualRows.indices) return
-        val row = dualRows[editedIndex]
-        val rowComplete = row.rightDescription.isNotBlank() && row.rightTotalAmountStr.isNotBlank()
-
-        // Automatically add a new row when the user completes the last row
-        if (editedIndex == dualRows.lastIndex && rowComplete) {
-            dualRows.add(DualReceiptRow())
+        if (editedIndex !in receiptRows.indices) return
+        val row = receiptRows[editedIndex]
+        // Automatically add a new row when the user types in the last row
+        if (editedIndex == receiptRows.lastIndex && row.hasData) {
+            receiptRows.add(ReceiptRow())
         }
     }
 
-    fun updateRightDescription(index: Int, desc: String) {
-        if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(rightDescription = desc)
+    fun updateDescription(index: Int, desc: String) {
+        if (index in receiptRows.indices) {
+            receiptRows[index] = receiptRows[index].copy(description = desc)
             checkAutoExpand(index)
         }
     }
 
-    fun updateRightQuantity(index: Int, qty: String) {
-        if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(rightQuantityStr = qty.toEnglishDigits())
+    fun updateQuantity(index: Int, qty: String) {
+        if (index in receiptRows.indices) {
+            receiptRows[index] = receiptRows[index].copy(quantityStr = qty.toEnglishDigits())
             checkAutoExpand(index)
         }
     }
 
-    fun updateRightTotalAmount(index: Int, total: String) {
-        if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(rightTotalAmountStr = total.toEnglishDigits())
-            checkAutoExpand(index)
-        }
-    }
-
-    fun updateLeftDescription(index: Int, desc: String) {
-        if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(leftDescription = desc)
-            checkAutoExpand(index)
-        }
-    }
-
-    fun updateLeftQuantity(index: Int, qty: String) {
-        if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(leftQuantityStr = qty.toEnglishDigits())
-            checkAutoExpand(index)
-        }
-    }
-
-    fun updateLeftTotalAmount(index: Int, total: String) {
-        if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(leftTotalAmountStr = total.toEnglishDigits())
+    fun updateTotalAmount(index: Int, total: String) {
+        if (index in receiptRows.indices) {
+            receiptRows[index] = receiptRows[index].copy(totalAmountStr = total.toEnglishDigits())
             checkAutoExpand(index)
         }
     }
 
     fun addManualRow() {
-        dualRows.add(DualReceiptRow())
+        receiptRows.add(ReceiptRow())
     }
 
     fun removeRow(index: Int) {
-        if (dualRows.size > 1 && index in dualRows.indices) {
-            dualRows.removeAt(index)
+        if (receiptRows.size > 1 && index in receiptRows.indices) {
+            receiptRows.removeAt(index)
         }
     }
 
-    fun calculateRightSubtotal(): Double = dualRows.sumOf { it.rightTotal }
-    fun calculateLeftSubtotal(): Double = dualRows.sumOf { it.leftTotal }
-    fun calculateSubtotal(): Double = calculateRightSubtotal() + calculateLeftSubtotal()
+    fun calculateSubtotal(): Double = receiptRows.sumOf { it.total }
     fun getDiscountAmount(): Double = discountAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
     fun calculateGrandTotal(): Double = (calculateSubtotal() - getDiscountAmount()).coerceAtLeast(0.0)
 
@@ -200,38 +170,16 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             if (customerName.isBlank()) {
                 customerName = "عميل نقدي"
             }
-            val itemsToSave = mutableListOf<InvoiceItemEntity>()
-            // Right side items first (from top to bottom)
-            dualRows.forEach { row ->
-                if (row.hasRightData) {
-                    val q = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
-                    val tot = row.rightTotal
-                    itemsToSave.add(
-                        InvoiceItemEntity(
-                            invoiceId = 0,
-                            description = row.rightDescription.ifBlank { "صنف" },
-                            quantity = q,
-                            unitPrice = if (q > 0) tot / q else tot,
-                            totalAmount = tot
-                        )
-                    )
-                }
-            }
-            // Left side items next (from top to bottom)
-            dualRows.forEach { row ->
-                if (row.hasLeftData) {
-                    val q = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
-                    val tot = row.leftTotal
-                    itemsToSave.add(
-                        InvoiceItemEntity(
-                            invoiceId = 0,
-                            description = row.leftDescription.ifBlank { "صنف" },
-                            quantity = q,
-                            unitPrice = if (q > 0) tot / q else tot,
-                            totalAmount = tot
-                        )
-                    )
-                }
+            val itemsToSave = receiptRows.filter { it.hasData }.map { row ->
+                val q = row.quantityStr.toDoubleOrNull() ?: 1.0
+                val tot = row.total
+                InvoiceItemEntity(
+                    invoiceId = 0,
+                    description = row.description.ifBlank { "صنف" },
+                    quantity = q,
+                    unitPrice = if (q > 0) tot / q else tot,
+                    totalAmount = tot
+                )
             }
 
             if (itemsToSave.isEmpty()) {
@@ -262,9 +210,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 invoiceNumber = repository.getNextInvoiceNumber()
                 customerName = ""
                 discountAmountStr = ""
-                dualRows.clear()
+                receiptRows.clear()
                 repeat(DEFAULT_ROW_COUNT) {
-                    dualRows.add(DualReceiptRow())
+                    receiptRows.add(ReceiptRow())
                 }
 
                 onSuccess(savedId)
@@ -283,29 +231,18 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         notes = inv.notes
         discountAmountStr = if (inv.discount > 0) inv.discount.toString() else ""
 
-        dualRows.clear()
-        val allItems = invoiceWithItems.items
-        val half = (allItems.size + 1) / 2
-        val rightItems = allItems.take(half)
-        val leftItems = allItems.drop(half)
-
-        val maxCount = maxOf(rightItems.size, leftItems.size)
-        for (i in 0 until maxCount) {
-            val r = rightItems.getOrNull(i)
-            val l = leftItems.getOrNull(i)
-            dualRows.add(
-                DualReceiptRow(
-                    rightDescription = r?.description ?: "",
-                    rightQuantityStr = r?.quantity?.toString() ?: "1",
-                    rightTotalAmountStr = r?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: "",
-                    leftDescription = l?.description ?: "",
-                    leftQuantityStr = l?.quantity?.toString() ?: "1",
-                    leftTotalAmountStr = l?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: ""
+        receiptRows.clear()
+        invoiceWithItems.items.forEach { item ->
+            receiptRows.add(
+                ReceiptRow(
+                    description = item.description,
+                    quantityStr = if (item.quantity > 0) item.quantity.toString() else "1",
+                    totalAmountStr = if (item.totalAmount > 0) item.totalAmount.toString() else ""
                 )
             )
         }
         // Add 1 trailing empty row
-        dualRows.add(DualReceiptRow())
+        receiptRows.add(ReceiptRow())
     }
 
     fun deleteInvoice(invoiceId: Long) {
@@ -353,7 +290,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             dateString = dateString,
             customerName = customerName,
             paymentType = paymentType,
-            dualRows = dualRows
+            rows = receiptRows
         )
     }
 
@@ -414,32 +351,18 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     fun addCatalogProductToInvoice(name: String, price: Double) {
         val priceStr = if (price > 0) price.toString() else ""
         
-        // 1. Fill empty RIGHT slot from top to bottom
         var placed = false
-        for (i in dualRows.indices) {
-            val row = dualRows[i]
-            if (!row.hasRightData) {
-                dualRows[i] = row.copy(rightDescription = name, rightTotalAmountStr = priceStr)
+        for (i in receiptRows.indices) {
+            val row = receiptRows[i]
+            if (!row.hasData) {
+                receiptRows[i] = row.copy(description = name, totalAmountStr = priceStr)
                 placed = true
                 break
             }
         }
 
-        // 2. When RIGHT side is full, transfer to LEFT slot from top to bottom
         if (!placed) {
-            for (i in dualRows.indices) {
-                val row = dualRows[i]
-                if (!row.hasLeftData) {
-                    dualRows[i] = row.copy(leftDescription = name, leftTotalAmountStr = priceStr)
-                    placed = true
-                    break
-                }
-            }
-        }
-
-        // 3. When both sides of all rows are full, add a new row
-        if (!placed) {
-            dualRows.add(DualReceiptRow(rightDescription = name, rightTotalAmountStr = priceStr))
+            receiptRows.add(ReceiptRow(description = name, totalAmountStr = priceStr))
         }
         _uiEventMessage.value = "تم إدراج الصنف في الفاتورة"
     }
@@ -449,44 +372,26 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val cleanQty = quantityStr.trim().toEnglishDigits().ifEmpty { "1" }
         val cleanTot = totalAmountStr.trim().toEnglishDigits().ifEmpty { "0" }
 
-        // 1. Fill empty RIGHT slot from top to bottom
         var placed = false
-        for (i in dualRows.indices) {
-            val row = dualRows[i]
-            if (!row.hasRightData) {
-                dualRows[i] = row.copy(
-                    rightDescription = cleanName,
-                    rightQuantityStr = cleanQty,
-                    rightTotalAmountStr = cleanTot
+        for (i in receiptRows.indices) {
+            val row = receiptRows[i]
+            if (!row.hasData) {
+                receiptRows[i] = row.copy(
+                    description = cleanName,
+                    quantityStr = cleanQty,
+                    totalAmountStr = cleanTot
                 )
                 placed = true
                 break
             }
         }
 
-        // 2. When RIGHT column is full, transfer and fill LEFT slot from top to bottom
         if (!placed) {
-            for (i in dualRows.indices) {
-                val row = dualRows[i]
-                if (!row.hasLeftData) {
-                    dualRows[i] = row.copy(
-                        leftDescription = cleanName,
-                        leftQuantityStr = cleanQty,
-                        leftTotalAmountStr = cleanTot
-                    )
-                    placed = true
-                    break
-                }
-            }
-        }
-
-        // 3. When both columns of all existing rows are full, append a new row
-        if (!placed) {
-            dualRows.add(
-                DualReceiptRow(
-                    rightDescription = cleanName,
-                    rightQuantityStr = cleanQty,
-                    rightTotalAmountStr = cleanTot
+            receiptRows.add(
+                ReceiptRow(
+                    description = cleanName,
+                    quantityStr = cleanQty,
+                    totalAmountStr = cleanTot
                 )
             )
         }

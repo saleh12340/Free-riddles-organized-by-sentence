@@ -144,7 +144,7 @@ fun NewInvoiceScreen(
                         // 3. New Clean Operation / Reset Form (نظافة عملية جديدة)
                         NeuCircleButton(
                             onClick = {
-                                if (viewModel.dualRows.any { it.hasRightData || it.hasLeftData } || viewModel.customerName.isNotBlank()) {
+                                if (viewModel.receiptRows.any { it.hasData } || viewModel.customerName.isNotBlank()) {
                                     showClearInvoiceDialog = true
                                 } else {
                                     viewModel.resetForm()
@@ -277,7 +277,7 @@ fun NewInvoiceScreen(
                                     dateString = viewModel.dateString,
                                     customerName = viewModel.customerName,
                                     paymentType = viewModel.paymentType,
-                                    dualRows = viewModel.dualRows
+                                    rows = viewModel.receiptRows
                                 )
                                 if (printerState is PrinterConnectionState.Connected) {
                                     viewModel.printInvoiceAsBitmap(bitmap)
@@ -345,13 +345,10 @@ fun NewInvoiceScreen(
                     onCustomerNameChange = { viewModel.customerName = it },
                     paymentType = viewModel.paymentType,
                     onPaymentTypeChange = { viewModel.paymentType = it },
-                    dualRows = viewModel.dualRows,
-                    onUpdateRightDescription = { idx, v -> viewModel.updateRightDescription(idx, v) },
-                    onUpdateRightQuantity = { idx, v -> viewModel.updateRightQuantity(idx, v) },
-                    onUpdateRightTotalAmount = { idx, v -> viewModel.updateRightTotalAmount(idx, v) },
-                    onUpdateLeftDescription = { idx, v -> viewModel.updateLeftDescription(idx, v) },
-                    onUpdateLeftQuantity = { idx, v -> viewModel.updateLeftQuantity(idx, v) },
-                    onUpdateLeftTotalAmount = { idx, v -> viewModel.updateLeftTotalAmount(idx, v) },
+                    rows = viewModel.receiptRows,
+                    onUpdateDescription = { idx, v -> viewModel.updateDescription(idx, v) },
+                    onUpdateQuantity = { idx, v -> viewModel.updateQuantity(idx, v) },
+                    onUpdateTotalAmount = { idx, v -> viewModel.updateTotalAmount(idx, v) },
                     onRemoveRow = { idx -> viewModel.removeRow(idx) },
                     onAddManualRow = { viewModel.addManualRow() },
                     customerSuggestions = customerSuggestions,
@@ -477,7 +474,7 @@ fun NewInvoiceScreen(
 
     // Invoice Image Preview & Share Dialog
     if (showPreviewDialog) {
-        val invoiceBitmap = remember(viewModel.dualRows, storeConfig) {
+        val invoiceBitmap = remember(viewModel.receiptRows, storeConfig) {
             ReceiptBitmapHelper.createReceiptBitmap(
                 context = context,
                 storeConfig = storeConfig,
@@ -485,7 +482,7 @@ fun NewInvoiceScreen(
                 dateString = viewModel.dateString,
                 customerName = viewModel.customerName,
                 paymentType = viewModel.paymentType,
-                dualRows = viewModel.dualRows,
+                rows = viewModel.receiptRows,
                 widthPx = 2160 // 4K Ultra-HD resolution
             )
         }
@@ -624,15 +621,12 @@ fun NewInvoiceScreen(
                         onCustomerNameChange = {},
                         paymentType = viewModel.paymentType,
                         onPaymentTypeChange = {},
-                        dualRows = viewModel.dualRows.filterNot { it.isCompletelyEmpty }.ifEmpty {
-                            listOf(com.example.ui.viewmodels.DualReceiptRow())
+                        rows = viewModel.receiptRows.filterNot { it.isCompletelyEmpty }.ifEmpty {
+                            listOf(com.example.ui.viewmodels.ReceiptRow())
                         },
-                        onUpdateRightDescription = { _, _ -> },
-                        onUpdateRightQuantity = { _, _ -> },
-                        onUpdateRightTotalAmount = { _, _ -> },
-                        onUpdateLeftDescription = { _, _ -> },
-                        onUpdateLeftQuantity = { _, _ -> },
-                        onUpdateLeftTotalAmount = { _, _ -> },
+                        onUpdateDescription = { _, _ -> },
+                        onUpdateQuantity = { _, _ -> },
+                        onUpdateTotalAmount = { _, _ -> },
                         onRemoveRow = {},
                         onAddManualRow = {},
                         isEditable = false

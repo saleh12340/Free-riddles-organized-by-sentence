@@ -493,22 +493,13 @@ fun InvoiceHistoryScreen(
                         .background(Color.White)
                         .padding(4.dp)
                 ) {
-                    val half = (item.items.size + 1) / 2
-                    val rightItems = item.items.take(half)
-                    val leftItems = item.items.drop(half)
-                    val maxCount = maxOf(rightItems.size, leftItems.size).coerceAtLeast(1)
-                    val rows = (0 until maxCount).map { i ->
-                        val r = rightItems.getOrNull(i)
-                        val l = leftItems.getOrNull(i)
-                        com.example.ui.viewmodels.DualReceiptRow(
-                            rightDescription = r?.description ?: "",
-                            rightQuantityStr = r?.quantity?.let { if (it > 0) it.toString() else "1" } ?: "1",
-                            rightTotalAmountStr = r?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: "",
-                            leftDescription = l?.description ?: "",
-                            leftQuantityStr = l?.quantity?.let { if (it > 0) it.toString() else "1" } ?: "1",
-                            leftTotalAmountStr = l?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: ""
+                    val rows = item.items.map { itm ->
+                        com.example.ui.viewmodels.ReceiptRow(
+                            description = itm.description,
+                            quantityStr = if (itm.quantity > 0) itm.quantity.toString() else "1",
+                            totalAmountStr = if (itm.totalAmount > 0) itm.totalAmount.toString() else ""
                         )
-                    }
+                    }.ifEmpty { listOf(com.example.ui.viewmodels.ReceiptRow()) }
 
                     InteractiveReceiptView(
                         storeConfig = storeConfig,
@@ -520,13 +511,10 @@ fun InvoiceHistoryScreen(
                         onCustomerNameChange = {},
                         paymentType = inv.paymentType,
                         onPaymentTypeChange = {},
-                        dualRows = rows,
-                        onUpdateRightDescription = { _, _ -> },
-                        onUpdateRightQuantity = { _, _ -> },
-                        onUpdateRightTotalAmount = { _, _ -> },
-                        onUpdateLeftDescription = { _, _ -> },
-                        onUpdateLeftQuantity = { _, _ -> },
-                        onUpdateLeftTotalAmount = { _, _ -> },
+                        rows = rows,
+                        onUpdateDescription = { _, _ -> },
+                        onUpdateQuantity = { _, _ -> },
+                        onUpdateTotalAmount = { _, _ -> },
                         onRemoveRow = {},
                         onAddManualRow = {},
                         isEditable = false

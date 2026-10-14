@@ -249,14 +249,16 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                         dateString = "2026/10/08",
                         customerName = "تجربة طباعة الفاتورة",
                         paymentType = "نقداً",
-                        dualRows = listOf(
-                            com.example.ui.viewmodels.DualReceiptRow(
-                                rightDescription = "صنف تجريبي 1",
-                                rightQuantityStr = "1",
-                                rightTotalAmountStr = "500",
-                                leftDescription = "صنف تجريبي 2",
-                                leftQuantityStr = "2",
-                                leftTotalAmountStr = "1000"
+                        rows = listOf(
+                            com.example.ui.viewmodels.ReceiptRow(
+                                description = "صنف تجريبي 1",
+                                quantityStr = "1",
+                                totalAmountStr = "500"
+                            ),
+                            com.example.ui.viewmodels.ReceiptRow(
+                                description = "صنف تجريبي 2",
+                                quantityStr = "2",
+                                totalAmountStr = "1000"
                             )
                         ),
                         widthPx = selectedPaperWidthDots

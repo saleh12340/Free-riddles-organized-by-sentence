@@ -14,7 +14,7 @@ import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.example.data.local.InvoiceItemEntity
 import com.example.data.local.StoreConfigEntity
-import com.example.ui.viewmodels.DualReceiptRow
+import com.example.ui.viewmodels.ReceiptRow
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -32,7 +32,7 @@ object InvoicePdfHelper {
         dateString: String,
         customerName: String,
         paymentType: String,
-        dualRows: List<DualReceiptRow>
+        rows: List<ReceiptRow>
     ): File? {
         return try {
             // 1. Render true 4K Ultra-HD 2160px receipt bitmap
@@ -43,7 +43,7 @@ object InvoicePdfHelper {
                 dateString = dateString,
                 customerName = customerName,
                 paymentType = paymentType,
-                dualRows = dualRows,
+                rows = rows,
                 widthPx = 2160 // 4K Ultra-HD native rendering
             )
 
@@ -97,23 +97,13 @@ object InvoicePdfHelper {
         paymentType: String,
         items: List<InvoiceItemEntity>
     ): File? {
-        val half = (items.size + 1) / 2
-        val rightItems = items.take(half)
-        val leftItems = items.drop(half)
-
-        val maxCount = maxOf(rightItems.size, leftItems.size).coerceAtLeast(1)
-        val rows = (0 until maxCount).map { i ->
-            val r = rightItems.getOrNull(i)
-            val l = leftItems.getOrNull(i)
-            DualReceiptRow(
-                rightDescription = r?.description ?: "",
-                rightQuantityStr = r?.quantity?.let { if (it > 0) it.toString() else "1" } ?: "1",
-                rightTotalAmountStr = r?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: "",
-                leftDescription = l?.description ?: "",
-                leftQuantityStr = l?.quantity?.let { if (it > 0) it.toString() else "1" } ?: "1",
-                leftTotalAmountStr = l?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: ""
+        val rows = items.map { item ->
+            ReceiptRow(
+                description = item.description,
+                quantityStr = if (item.quantity > 0) item.quantity.toString() else "1",
+                totalAmountStr = if (item.totalAmount > 0) item.totalAmount.toString() else ""
             )
-        }
+        }.ifEmpty { listOf(ReceiptRow(description = "صنف", quantityStr = "1", totalAmountStr = "0")) }
 
         return createInvoicePdf(
             context = context,
@@ -122,7 +112,7 @@ object InvoicePdfHelper {
             dateString = dateString,
             customerName = customerName,
             paymentType = paymentType,
-            dualRows = rows
+            rows = rows
         )
     }
 
