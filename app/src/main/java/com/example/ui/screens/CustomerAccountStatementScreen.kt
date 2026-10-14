@@ -32,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.StoreConfigEntity
+import com.example.data.local.InvoiceWithItems
+import com.example.data.local.CustomerReceiptEntity
 import com.example.ui.components.InvoicePdfHelper
 import com.example.ui.theme.*
 import com.example.ui.util.toEnglishDigits
