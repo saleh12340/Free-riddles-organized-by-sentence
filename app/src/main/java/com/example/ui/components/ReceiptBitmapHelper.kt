@@ -10,6 +10,8 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 import com.example.ui.util.toEnglishDigits
 import com.example.ui.util.formatQuantity
+import androidx.core.content.res.ResourcesCompat
+import com.example.R
 
 object ReceiptBitmapHelper {
 
@@ -54,32 +56,35 @@ object ReceiptBitmapHelper {
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
 
+        val amiriTypeface = ResourcesCompat.getFont(context, R.font.amiri) ?: Typeface.DEFAULT
+        val amiriBold = Typeface.create(amiriTypeface, Typeface.BOLD)
+
         // Ultra-Bold, Solid Black Paints (Proportionally scaled font sizes & stroke widths)
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 21f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
         val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 14f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
         val heavyBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 15f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
         val smallBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 11.5f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
@@ -103,14 +108,14 @@ object ReceiptBitmapHelper {
         val whiteTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = 14f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
         val grandTotalNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = 16.5f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
@@ -177,14 +182,14 @@ object ReceiptBitmapHelper {
         val rowDescPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 12.5f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
         val rowTotalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 13.5f * scale
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            typeface = amiriBold
             isFakeBoldText = true
         }
 
