@@ -77,7 +77,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     var customerName by mutableStateOf("")
     var paymentType by mutableStateOf("نقداً") // "نقداً" or "أجل"
     var notes by mutableStateOf("")
-    var discountAmountStr by mutableStateOf("")
+    var receivedAmountStr by mutableStateOf("")
 
     // Single-column expanding rows: Starts with DEFAULT_ROW_COUNT
     val receiptRows = mutableStateListOf<ReceiptRow>()
@@ -113,7 +113,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             customerName = ""
             paymentType = "نقداً"
             notes = ""
-            discountAmountStr = ""
+            receivedAmountStr = ""
             receiptRows.clear()
             repeat(DEFAULT_ROW_COUNT) {
                 receiptRows.add(ReceiptRow())
@@ -162,8 +162,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun calculateSubtotal(): Double = receiptRows.sumOf { it.total }
-    fun getDiscountAmount(): Double = discountAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
-    fun calculateGrandTotal(): Double = (calculateSubtotal() - getDiscountAmount()).coerceAtLeast(0.0)
+    fun getReceivedAmount(): Double = receivedAmountStr.toEnglishDigits().toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+    fun calculateGrandTotal(): Double = calculateSubtotal()
 
     fun saveInvoiceToDatabase(onSuccess: (Long) -> Unit = {}) {
         viewModelScope.launch {
@@ -189,7 +189,6 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
             try {
                 val subtotal = calculateSubtotal()
-                val discount = getDiscountAmount()
                 val grandTotal = calculateGrandTotal()
                 val currentInvoiceNum = invoiceNumber
                 val invoiceEntity = InvoiceEntity(
@@ -198,12 +197,24 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                     customerName = customerName,
                     paymentType = paymentType,
                     subtotal = subtotal,
-                    discount = discount,
+                    discount = 0.0,
                     grandTotal = grandTotal,
                     notes = notes
                 )
 
                 val savedId = repository.saveInvoice(invoiceEntity, itemsToSave)
+                val received = getReceivedAmount().coerceAtMost(grandTotal)
+                if (received > 0.0 && customerName != "عميل نقدي") {
+                    db.customerReceiptDao().insertReceipt(
+                        CustomerReceiptEntity(
+                            customerName = customerName.trim(),
+                            amount = received,
+                            dateString = dateString,
+                            paymentType = "المبلغ الواصل للفاتورة #$currentInvoiceNum",
+                            notes = "دفعة مرتبطة بالفاتورة رقم #$currentInvoiceNum"
+                        )
+                    )
+                }
                 _uiEventMessage.value = "تم حفظ الفاتورة بنجاح برقم #$currentInvoiceNum وحفظها في السجل!"
 
                 // Advance to next invoice number and prepare fresh rows
