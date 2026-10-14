@@ -16,6 +16,7 @@ import com.example.printer.BluetoothPrinterManager
 import com.example.printer.PrinterConnectionState
 import com.example.printer.ThermalImageConverter
 import com.example.ui.components.InvoicePdfHelper
+import com.example.ui.components.ReceiptBitmapHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -191,6 +192,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 val subtotal = calculateSubtotal()
                 val grandTotal = calculateGrandTotal()
                 val currentInvoiceNum = invoiceNumber
+                val received = getReceivedAmount().coerceAtMost(grandTotal)
+                val remaining = (grandTotal - received).coerceAtLeast(0.0)
+
                 val invoiceEntity = InvoiceEntity(
                     invoiceNumber = currentInvoiceNum,
                     dateString = dateString,
@@ -198,12 +202,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                     paymentType = paymentType,
                     subtotal = subtotal,
                     discount = 0.0,
+                    paidAmount = received,
+                    remainingAmount = remaining,
                     grandTotal = grandTotal,
                     notes = notes
                 )
 
                 val savedId = repository.saveInvoice(invoiceEntity, itemsToSave)
-                val received = getReceivedAmount().coerceAtMost(grandTotal)
                 if (received > 0.0 && customerName != "عميل نقدي") {
                     db.customerReceiptDao().insertReceipt(
                         CustomerReceiptEntity(
@@ -211,7 +216,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                             amount = received,
                             dateString = dateString,
                             paymentType = "المبلغ الواصل للفاتورة #$currentInvoiceNum",
-                            notes = "دفعة مرتبطة بالفاتورة رقم #$currentInvoiceNum"
+                            notes = "دفعة نقدية مرتبطة بالفاتورة رقم #$currentInvoiceNum"
                         )
                     )
                 }
@@ -240,7 +245,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         customerName = inv.customerName
         paymentType = inv.paymentType
         notes = inv.notes
-        receivedAmountStr = if (inv.discount > 0) inv.discount.toString() else ""
+        receivedAmountStr = if (inv.paidAmount > 0) inv.paidAmount.toString() else if (inv.discount > 0) inv.discount.toString() else ""
 
         receiptRows.clear()
         invoiceWithItems.items.forEach { item ->
@@ -301,7 +306,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             dateString = dateString,
             customerName = customerName,
             paymentType = paymentType,
-            rows = receiptRows
+            rows = receiptRows,
+            receivedAmount = getReceivedAmount()
         )
     }
 
@@ -330,7 +336,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             dateString = invoice.dateString,
             customerName = invoice.customerName,
             paymentType = invoice.paymentType,
-            items = items
+            items = items,
+            receivedAmount = invoice.paidAmount
         )
     }
 
@@ -479,6 +486,62 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             db.customerReceiptDao().deleteReceipt(receiptId)
             _uiEventMessage.value = "تم حذف سند القبض"
+        }
+    }
+
+    fun updateCustomerReceipt(receipt: CustomerReceiptEntity) {
+        viewModelScope.launch {
+            db.customerReceiptDao().insertReceipt(receipt)
+            _uiEventMessage.value = "تم تعديل سند القبض بنجاح"
+        }
+    }
+
+    fun deleteMultipleInvoices(invoiceIds: List<Long>) {
+        viewModelScope.launch {
+            invoiceIds.forEach { repository.deleteInvoice(it) }
+            _uiEventMessage.value = "تم حذف ${invoiceIds.size} فاتورة بنجاح"
+        }
+    }
+
+    fun deleteMultipleReceipts(receiptIds: List<Long>) {
+        viewModelScope.launch {
+            receiptIds.forEach { db.customerReceiptDao().deleteReceipt(it) }
+            _uiEventMessage.value = "تم حذف ${receiptIds.size} سند بنجاح"
+        }
+    }
+
+    fun printCustomerReceiptVoucher(receipt: CustomerReceiptEntity) {
+        viewModelScope.launch {
+            val config = storeConfig.value ?: StoreConfigEntity()
+            val bitmap = ReceiptBitmapHelper.createVoucherBitmap(
+                context = getApplication(),
+                storeConfig = config,
+                receipt = receipt
+            )
+            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap)
+            result.onSuccess {
+                _uiEventMessage.value = "تمت طباعة سند القبض حرارياً بنجاح!"
+            }.onFailure { e ->
+                _uiEventMessage.value = e.message ?: "خطأ في طباعة السند"
+            }
+        }
+    }
+
+    fun printCustomerStatementSummary(customerName: String, statementRows: List<InvoicePdfHelper.CustomerStatementRow>) {
+        viewModelScope.launch {
+            val config = storeConfig.value ?: StoreConfigEntity()
+            val bitmap = ReceiptBitmapHelper.createCustomerStatementThermalBitmap(
+                context = getApplication(),
+                storeConfig = config,
+                customerName = customerName,
+                statementRows = statementRows
+            )
+            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap)
+            result.onSuccess {
+                _uiEventMessage.value = "تمت طباعة تقرير كشف الحساب حرارياً!"
+            }.onFailure { e ->
+                _uiEventMessage.value = e.message ?: "خطأ في طباعة كشف الحساب"
+            }
         }
     }
 }

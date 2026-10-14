@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.local.InvoiceWithItems
 import com.example.ui.screens.*
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
@@ -175,7 +176,13 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onNavigateToPrinterSetup = { currentTab = NavigationScreen.PRINTER }
                 )
                 NavigationScreen.PRODUCTS -> ProductsCatalogScreen(viewModel = viewModel)
-                NavigationScreen.CUSTOMERS -> CustomersScreen(viewModel = viewModel)
+                NavigationScreen.CUSTOMERS -> CustomersScreen(
+                    viewModel = viewModel,
+                    onEditInvoice = { inv ->
+                        viewModel.loadInvoiceForEditing(inv)
+                        currentTab = NavigationScreen.NEW_INVOICE
+                    }
+                )
                 NavigationScreen.PRINTER -> PrinterSetupScreen(viewModel = viewModel)
                 NavigationScreen.SETTINGS -> StoreSettingsScreen(viewModel = viewModel)
             }

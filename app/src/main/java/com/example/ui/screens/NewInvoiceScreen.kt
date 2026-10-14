@@ -60,6 +60,7 @@ fun NewInvoiceScreen(
     val storeConfig = storeConfigState ?: StoreConfigEntity()
     val allProducts by viewModel.allProducts.collectAsState()
     val allInvoices by viewModel.allInvoices.collectAsState()
+    val allReceipts by viewModel.allReceipts.collectAsState()
     val printerState by viewModel.printerState.collectAsState()
 
     var showProductPickerSheet by remember { mutableStateOf(false) }
@@ -68,13 +69,15 @@ fun NewInvoiceScreen(
     var showClearInvoiceDialog by remember { mutableStateOf(false) }
 
     val formatter = DecimalFormat("#,##0.##")
-    val customerSuggestions = remember(allInvoices, viewModel.customerName) {
+    val customerSuggestions = remember(allInvoices, allReceipts, viewModel.customerName) {
         val q = viewModel.customerName.trim()
-        allInvoices.asSequence()
-            .map { it.invoice.customerName.trim() }
+        val invNames = allInvoices.map { it.invoice.customerName.trim() }
+        val recNames = allReceipts.map { it.customerName.trim() }
+        (invNames + recNames)
+            .asSequence()
             .filter { it.isNotBlank() && it != "عميل نقدي" && (q.isBlank() || it.contains(q, ignoreCase = true)) }
             .distinctBy { it.lowercase(Locale.ROOT) }
-            .take(4)
+            .take(6)
             .toList()
     }
 
@@ -339,7 +342,9 @@ fun NewInvoiceScreen(
                     onRemoveRow = { idx -> viewModel.removeRow(idx) },
                     onAddManualRow = { viewModel.addManualRow() },
                     customerSuggestions = customerSuggestions,
-                    onCustomerSuggestionClick = { selected -> viewModel.customerName = selected }
+                    onCustomerSuggestionClick = { selected -> viewModel.customerName = selected },
+                    receivedAmountStr = viewModel.receivedAmountStr,
+                    onReceivedAmountChange = { viewModel.receivedAmountStr = it }
                 )
             }
         }
@@ -468,6 +473,7 @@ fun NewInvoiceScreen(
             viewModel.customerName,
             viewModel.paymentType,
             thermalRowsKey,
+            viewModel.receivedAmountStr,
             storeConfig
         ) {
             val receiptBitmap = ReceiptBitmapHelper.createReceiptBitmap(
@@ -478,6 +484,7 @@ fun NewInvoiceScreen(
                 customerName = viewModel.customerName,
                 paymentType = viewModel.paymentType,
                 rows = viewModel.receiptRows,
+                receivedAmount = viewModel.getReceivedAmount(),
                 widthPx = 384
             )
             ThermalImageConverter.prepareForThermalPrinter(receiptBitmap, targetWidthDots = 384)
@@ -548,7 +555,7 @@ fun NewInvoiceScreen(
 
     // Invoice Image Preview & Share Dialog
     if (showPreviewDialog) {
-        val invoiceBitmap = remember(viewModel.receiptRows, storeConfig) {
+        val invoiceBitmap = remember(viewModel.receiptRows, viewModel.receivedAmountStr, storeConfig) {
             ReceiptBitmapHelper.createReceiptBitmap(
                 context = context,
                 storeConfig = storeConfig,
@@ -557,6 +564,7 @@ fun NewInvoiceScreen(
                 customerName = viewModel.customerName,
                 paymentType = viewModel.paymentType,
                 rows = viewModel.receiptRows,
+                receivedAmount = viewModel.getReceivedAmount(),
                 widthPx = 2160 // 4K Ultra-HD resolution
             )
         }

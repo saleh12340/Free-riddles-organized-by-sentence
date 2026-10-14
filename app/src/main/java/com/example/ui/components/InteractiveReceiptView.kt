@@ -184,6 +184,8 @@ fun InteractiveReceiptView(
     onAddManualRow: () -> Unit,
     customerSuggestions: List<String> = emptyList(),
     onCustomerSuggestionClick: (String) -> Unit = {},
+    receivedAmountStr: String = "",
+    onReceivedAmountChange: (String) -> Unit = {},
     isEditable: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -191,6 +193,8 @@ fun InteractiveReceiptView(
 
     val subtotal = rows.sumOf { it.total }
     val grandTotal = subtotal
+    val receivedAmount = receivedAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+    val remainingAmount = (grandTotal - receivedAmount).coerceAtLeast(0.0)
 
     Box(
         modifier = modifier
@@ -465,31 +469,11 @@ fun InteractiveReceiptView(
             Spacer(modifier = Modifier.height(2.dp))
 
             // 5. TOTALS SECTION:
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(ReceiptInkNavy.copy(alpha = 0.08f))
-                    .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "إجمالي الأصناف: ${formatter.format(subtotal)} ${storeConfig.currencySymbol}",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ReceiptInkBlueAccent,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            Spacer(modifier = Modifier.height(1.5.dp))
-
-            // Part B: Grand Total Directly Underneath (وكذلك إجمالي عام للكل تحته)
+            // Part A: Grand Total
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(4.dp))
                     .background(ReceiptInkNavy)
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -507,6 +491,105 @@ fun InteractiveReceiptView(
                     fontWeight = FontWeight.Black,
                     color = Color(0xFFFEF08A) // Soft gold highlight
                 )
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Part B: Paid Amount & Remaining Balance Row (المبلغ الواصل والمتبقي)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFFF8FAFC))
+                    .border(0.8.dp, Color(0xFFCBD5E1), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Paid Amount (المبلغ الواصل)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "المبلغ الواصل:",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ReceiptInkNavy
+                    )
+                    if (isEditable) {
+                        Surface(
+                            modifier = Modifier
+                                .width(65.dp)
+                                .height(24.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color.White,
+                            border = androidx.compose.foundation.BorderStroke(0.8.dp, ReceiptInkBlueAccent.copy(alpha = 0.5f))
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AutoSelectBasicTextField(
+                                    value = receivedAmountStr,
+                                    onValueChange = { onReceivedAmountChange(it.toEnglishDigits()) },
+                                    textStyle = TextStyle(
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ReceiptInkNavy,
+                                        textAlign = TextAlign.Center
+                                    ),
+                                    singleLine = true,
+                                    placeholder = "0.0",
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                            }
+                        }
+
+                        // Quick "كامل" button
+                        Surface(
+                            modifier = Modifier.clickable {
+                                onReceivedAmountChange(if (grandTotal > 0) grandTotal.toInt().toString() else "0")
+                            },
+                            shape = RoundedCornerShape(4.dp),
+                            color = ReceiptInkBlueAccent.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = "كامل",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ReceiptInkBlueAccent,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "${formatter.format(receivedAmount)} ${storeConfig.currencySymbol}",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ReceiptInkNavy
+                        )
+                    }
+                }
+
+                // Remaining Balance (المتبقي)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = "المتبقي:",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (remainingAmount > 0) ReceiptInkRed else Color(0xFF166534)
+                    )
+                    Text(
+                        text = if (remainingAmount > 0) "${formatter.format(remainingAmount)} ${storeConfig.currencySymbol}" else "خالص ✓",
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (remainingAmount > 0) ReceiptInkRed else Color(0xFF166534)
+                    )
+                }
             }
 
             // 6. ULTRA-COMPACT SIGNATURES (تقليص توقيع المشتري وتوقيع البائع)

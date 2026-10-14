@@ -393,7 +393,8 @@ fun InvoiceHistoryScreen(
                                                     dateString = inv.dateString,
                                                     customerName = inv.customerName,
                                                     paymentType = inv.paymentType,
-                                                    items = item.items
+                                                    items = item.items,
+                                                    receivedAmount = inv.paidAmount
                                                 )
                                                 if (printerState is PrinterConnectionState.Connected) {
                                                     viewModel.printInvoiceAsBitmap(bitmap)
@@ -517,6 +518,7 @@ fun InvoiceHistoryScreen(
                         onUpdateTotalAmount = { _, _ -> },
                         onRemoveRow = {},
                         onAddManualRow = {},
+                        receivedAmountStr = if (inv.paidAmount > 0) inv.paidAmount.toString() else if (inv.discount > 0) inv.discount.toString() else "",
                         isEditable = false
                     )
                 }

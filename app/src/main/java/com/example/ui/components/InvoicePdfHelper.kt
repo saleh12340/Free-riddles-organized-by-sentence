@@ -32,7 +32,8 @@ object InvoicePdfHelper {
         dateString: String,
         customerName: String,
         paymentType: String,
-        rows: List<ReceiptRow>
+        rows: List<ReceiptRow>,
+        receivedAmount: Double = 0.0
     ): File? {
         return try {
             // 1. Render true 4K Ultra-HD 2160px receipt bitmap
@@ -44,6 +45,7 @@ object InvoicePdfHelper {
                 customerName = customerName,
                 paymentType = paymentType,
                 rows = rows,
+                receivedAmount = receivedAmount,
                 widthPx = 2160 // 4K Ultra-HD native rendering
             )
 
@@ -95,7 +97,8 @@ object InvoicePdfHelper {
         dateString: String,
         customerName: String,
         paymentType: String,
-        items: List<InvoiceItemEntity>
+        items: List<InvoiceItemEntity>,
+        receivedAmount: Double = 0.0
     ): File? {
         val rows = items.map { item ->
             ReceiptRow(
@@ -112,7 +115,8 @@ object InvoicePdfHelper {
             dateString = dateString,
             customerName = customerName,
             paymentType = paymentType,
-            rows = rows
+            rows = rows,
+            receivedAmount = receivedAmount
         )
     }
 

@@ -29,6 +29,8 @@ data class InvoiceEntity(
     val paymentType: String, // "نقداً" or "أجل"
     val subtotal: Double,
     val discount: Double = 0.0,
+    val paidAmount: Double = 0.0,
+    val remainingAmount: Double = 0.0,
     val grandTotal: Double,
     val notes: String = "",
     val createdAtTimestamp: Long = System.currentTimeMillis()

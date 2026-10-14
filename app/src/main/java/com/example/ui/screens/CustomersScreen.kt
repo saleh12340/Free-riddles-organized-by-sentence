@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.data.local.InvoiceWithItems
 import com.example.ui.components.InvoicePdfHelper
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
@@ -37,7 +38,8 @@ import com.example.ui.util.toEnglishString
 @Composable
 fun CustomersScreen(
     viewModel: InvoiceViewModel,
-    onNavigateToCustomerStatement: ((String) -> Unit)? = null
+    onNavigateToCustomerStatement: ((String) -> Unit)? = null,
+    onEditInvoice: ((InvoiceWithItems) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val invoices by viewModel.allInvoices.collectAsState()
@@ -52,7 +54,8 @@ fun CustomersScreen(
         CustomerAccountStatementScreen(
             customerName = customerName,
             viewModel = viewModel,
-            onBack = { selectedCustomer = null }
+            onBack = { selectedCustomer = null },
+            onEditInvoice = onEditInvoice
         )
         return
     }
@@ -280,6 +283,13 @@ fun CustomersScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    val cleanName = newCustomerName.trim()
+                    val isDuplicateName = remember(cleanName, invoices, allReceipts) {
+                        cleanName.isNotBlank() && (invoices.map { it.invoice.customerName.trim() } +
+                            allReceipts.map { it.customerName.trim() })
+                            .any { it.equals(cleanName, ignoreCase = true) }
+                    }
+
                     Text("اسم العميل:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     NeuInsetBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                         TextField(
@@ -287,12 +297,22 @@ fun CustomersScreen(
                             onValueChange = { newCustomerName = it },
                             placeholder = { Text("مثال: محمد علي", fontSize = 12.sp) },
                             singleLine = true,
+                            isError = isDuplicateName,
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             )
+                        )
+                    }
+
+                    if (isDuplicateName) {
+                        Text(
+                            text = "⚠️ اسم العميل مسجل مسبقاً! لا يُسمح بتكرار أسماء العملاء.",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeuError
                         )
                     }
 
@@ -713,5 +733,7 @@ data class CustomerTx(
     val amount: Double,
     val isDebit: Boolean,
     val id: Long,
-    val rawType: String
+    val rawType: String,
+    val invoiceWithItems: com.example.data.local.InvoiceWithItems? = null,
+    val receipt: com.example.data.local.CustomerReceiptEntity? = null
 )
