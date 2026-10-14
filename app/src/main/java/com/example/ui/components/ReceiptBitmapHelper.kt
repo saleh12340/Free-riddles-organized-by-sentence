@@ -17,6 +17,49 @@ object ReceiptBitmapHelper {
 
     private val formatter = DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US))
 
+    /**
+     * Builds a Paint configured with Amiri font styled to lean toward Ruq'ah handwriting:
+     * - textScaleX: slightly elongates words horizontally (تطويل الكلمات قليلاً)
+     * - textSkewX: subtle backward dynamic slant reminiscent of Ruq'ah cursive flow (يميل إلى خط الرقعة)
+     * - isFakeBoldText: bolsters stroke density for ultra-crisp thermal print heads
+     */
+    private fun getAmiriPaint(
+        context: Context,
+        textSize: Float,
+        isBold: Boolean = false,
+        align: Paint.Align = Paint.Align.RIGHT,
+        color: Int = Color.BLACK,
+        extendWords: Boolean = true,
+        leanRuqah: Boolean = true
+    ): Paint {
+        val amiriTypeface = ResourcesCompat.getFont(context, R.font.amiri) ?: Typeface.DEFAULT
+        val tf = if (isBold) Typeface.create(amiriTypeface, Typeface.BOLD) else amiriTypeface
+        return Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color
+            this.textSize = textSize
+            this.typeface = tf
+            this.textAlign = align
+            if (isBold) {
+                this.isFakeBoldText = true
+            }
+            if (extendWords) {
+                this.textScaleX = 1.07f
+                this.letterSpacing = 0.02f
+            }
+            if (leanRuqah) {
+                this.textSkewX = -0.12f
+            }
+        }
+    }
+
+    /**
+     * Creates an ultra-clear, highly compressed, pure white (zero-background) thermal receipt.
+     * Features:
+     * - RTL Table Layout: [اسم الصنف]   [الكمية]   [القيمة]   [الإجمالية]
+     * - Rows aligned tightly underneath each other to minimize paper waste
+     * - Sequential Financial Totals: Grand Total -> Paid (الواصل) -> Remaining (المتبقي للعميل أو عليه)
+     * - High-contrast text on white canvas with clean divider lines (no black background blocks)
+     */
     fun createReceiptBitmap(
         context: Context,
         storeConfig: StoreConfigEntity,
@@ -26,257 +69,231 @@ object ReceiptBitmapHelper {
         paymentType: String,
         rows: List<ReceiptRow>,
         receivedAmount: Double = 0.0,
-        widthPx: Int = 384 // Default 384px (58mm native thermal resolution)
+        widthPx: Int = 384 // 384 for 58mm, 576 for 80mm
     ): Bitmap {
         val baseWidth = 384f
         val scale = widthPx.toFloat() / baseWidth
 
-        // Filter out completely empty rows
+        // Filter out empty rows
         val activeRows = rows.filterNot { it.isCompletelyEmpty }.ifEmpty {
             listOf(ReceiptRow(description = "صنف", quantityStr = "1", totalAmountStr = "0"))
         }
 
         val grandTotal = activeRows.sumOf { it.total }
-        val remaining = (grandTotal - receivedAmount).coerceAtLeast(0.0)
-        val hasReceivedSection = receivedAmount > 0.0
+        val diff = grandTotal - receivedAmount
 
-        // Dynamic height calculations scaled proportionally
-        val headerHeight = 90f * scale
-        val tableHeaderHeight = 26f * scale
-        val rowHeight = 25f * scale
-        val tableHeight = activeRows.size * rowHeight
-        val grandTotalHeight = 32f * scale
-        val receivedHeight = if (hasReceivedSection) 46f * scale else 0f
-        val footerHeight = 24f * scale
-        val padding = 8f * scale
-        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + grandTotalHeight + receivedHeight + footerHeight + (24f * scale)).toInt().coerceAtLeast(300)
+        // Tight vertical rhythm to compress receipt and save paper
+        val padding = 4f * scale
+        val headerH = (if (storeConfig.storeSubtitle.isNotEmpty()) 56f else 46f) * scale
+        val metaH = 34f * scale
+        val tableHeaderH = 18f * scale
+        val rowH = 17f * scale
+        val tableH = activeRows.size * rowH
+        val totalsH = 54f * scale
+        val footerH = 32f * scale
+        val totalHeight = (headerH + metaH + tableHeaderH + tableH + totalsH + footerH + (10f * scale)).toInt().coerceAtLeast(200)
 
         val bitmap = Bitmap.createBitmap(widthPx, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
+        // 100% pure white canvas: zero dark or filled backgrounds
         canvas.drawColor(Color.WHITE)
 
-        val amiriTypeface = ResourcesCompat.getFont(context, R.font.amiri) ?: Typeface.DEFAULT
-        val amiriBold = Typeface.create(amiriTypeface, Typeface.BOLD)
+        // Paints with Amiri font leaning to Ruq'ah
+        val storeTitlePaint = getAmiriPaint(context, 19.5f * scale, isBold = true, align = Paint.Align.CENTER)
+        val storeSubPaint = getAmiriPaint(context, 10f * scale, isBold = false, align = Paint.Align.CENTER)
+        
+        val headerLabelPaint = getAmiriPaint(context, 11f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val metaBoldPaint = getAmiriPaint(context, 11.5f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val metaRegularPaint = getAmiriPaint(context, 10f * scale, isBold = false, align = Paint.Align.LEFT)
+        
+        val tableHeaderPaint = getAmiriPaint(context, 11f * scale, isBold = true)
+        val rowTextPaint = getAmiriPaint(context, 10.5f * scale, isBold = false)
+        val rowBoldPaint = getAmiriPaint(context, 10.5f * scale, isBold = true)
+        
+        val totalLabelPaint = getAmiriPaint(context, 12f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val totalValuePaint = getAmiriPaint(context, 13f * scale, isBold = true, align = Paint.Align.LEFT)
+        val paidLabelPaint = getAmiriPaint(context, 11.5f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val paidValuePaint = getAmiriPaint(context, 12f * scale, isBold = true, align = Paint.Align.LEFT)
+        val remLabelPaint = getAmiriPaint(context, 11.5f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val remValuePaint = getAmiriPaint(context, 12.5f * scale, isBold = true, align = Paint.Align.LEFT)
 
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val footerPaint = getAmiriPaint(context, 9.5f * scale, isBold = false, align = Paint.Align.CENTER)
+
+        // Line dividers
+        val solidLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 21f * scale
-            typeface = amiriBold
-            textAlign = Paint.Align.CENTER
-        }
-
-        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.DKGRAY
-            textSize = 10f * scale
-            typeface = amiriTypeface
-            textAlign = Paint.Align.CENTER
-        }
-
-        val labelBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 11.5f * scale
-            typeface = amiriBold
-        }
-
-        val regularPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 10.5f * scale
-            typeface = amiriTypeface
-        }
-
-        val whiteTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = 12f * scale
-            typeface = amiriBold
-        }
-
-        val grandTotalNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = 15f * scale
-            typeface = amiriBold
-        }
-
-        val solidBlackFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            style = Paint.Style.FILL
-        }
-
-        val borderStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            style = Paint.Style.STROKE
             strokeWidth = 1.2f * scale
         }
-
         val thinLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.LTGRAY
+            color = Color.BLACK
             strokeWidth = 0.8f * scale
         }
-
         val dottedLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.DKGRAY
-            strokeWidth = 1f * scale
-            pathEffect = DashPathEffect(floatArrayOf(4f * scale, 3f * scale), 0f)
-        }
-
-        val smallBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 9.5f * scale
-            typeface = amiriBold
+            strokeWidth = 0.8f * scale
+            pathEffect = DashPathEffect(floatArrayOf(3f * scale, 3f * scale), 0f)
         }
 
-        var currentY = padding
+        var currentY = padding + (2f * scale)
 
         // 1. STORE HEADER
-        val storeName = storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" }
-        canvas.drawText(storeName, widthPx / 2f, currentY + (22f * scale), titlePaint)
-        currentY += 27f * scale
+        val storeName = storeConfig.storeNameArabic.ifEmpty { "متجرنا" }
+        canvas.drawText(storeName, widthPx / 2f, currentY + (17f * scale), storeTitlePaint)
+        currentY += 21f * scale
 
-        val phones = "هاتف: ${storeConfig.phone1.ifEmpty { "772437314" }}" +
-                if (storeConfig.phone2.isNotEmpty()) " - ${storeConfig.phone2}" else ""
-        canvas.drawText(phones, widthPx / 2f, currentY + (11f * scale), subPaint)
-        currentY += 15f * scale
-
-        if (storeConfig.address.isNotEmpty()) {
-            canvas.drawText(storeConfig.address, widthPx / 2f, currentY + (10f * scale), subPaint)
-            currentY += 14f * scale
+        if (storeConfig.storeSubtitle.isNotEmpty()) {
+            canvas.drawText(storeConfig.storeSubtitle, widthPx / 2f, currentY + (10f * scale), storeSubPaint)
+            currentY += 13f * scale
         }
 
-        canvas.drawLine(padding, currentY + (2f * scale), widthPx - padding, currentY + (2f * scale), dottedLinePaint)
-        currentY += 8f * scale
+        val phones = "هاتف: ${storeConfig.phone1.ifEmpty { "770000000" }}" +
+                if (storeConfig.phone2.isNotEmpty()) " - ${storeConfig.phone2}" else ""
+        canvas.drawText(phones, widthPx / 2f, currentY + (10f * scale), storeSubPaint)
+        currentY += 14f * scale
+
+        // Header Divider
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
+        currentY += 4f * scale
 
         // 2. INVOICE META ROW
-        labelBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("فاتورة: #${invoiceNumber.toString().toEnglishDigits()}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
+        // Right: Invoice #, Center: Payment Type, Left: Date
+        metaBoldPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("فاتورة: #${invoiceNumber.toString().toEnglishDigits()}", widthPx - padding, currentY + (12f * scale), metaBoldPaint)
 
-        labelBoldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText(paymentType, widthPx / 2f, currentY + (13f * scale), labelBoldPaint)
+        metaBoldPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText(paymentType, widthPx / 2f, currentY + (12f * scale), metaBoldPaint)
 
-        regularPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText(dateString.toEnglishDigits(), padding, currentY + (13f * scale), regularPaint)
-        currentY += 17f * scale
+        metaRegularPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText(dateString.toEnglishDigits(), padding, currentY + (12f * scale), metaRegularPaint)
+        currentY += 15f * scale
 
         // Customer Name Row
-        labelBoldPaint.textAlign = Paint.Align.RIGHT
+        metaBoldPaint.textAlign = Paint.Align.RIGHT
         val custText = "العميل: ${customerName.ifEmpty { "عميل نقدي" }}"
-        canvas.drawText(custText, widthPx - padding, currentY + (13f * scale), labelBoldPaint)
-        currentY += 19f * scale
+        canvas.drawText(custText, widthPx - padding, currentY + (12f * scale), metaBoldPaint)
+        currentY += 16f * scale
 
-        // 3. TABLE HEADER
-        val colNoW = 28f * scale
-        val colUnitW = 54f * scale
-        val colQtyW = 44f * scale
-        val colTotalW = 68f * scale
+        // Divider before items table
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
+        currentY += 2f * scale
 
-        canvas.drawRect(padding, currentY, widthPx - padding, currentY + tableHeaderHeight, solidBlackFill)
+        // 3. TABLE HEADER (RTL Columns: اسم الصنف | الكمية | القيمة | الإجمالية)
+        // Coordinates:
+        // Leftmost: الإجمالية (padding)
+        // Next: القيمة (padding + 94f)
+        // Next: الكمية (padding + 144f)
+        // Rightmost: اسم الصنف (widthPx - padding)
+        val xTotal = padding
+        val xPrice = padding + (94f * scale)
+        val xQty = padding + (144f * scale)
+        val xDesc = widthPx - padding
 
-        whiteTextPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("م", widthPx - padding - (colNoW / 2f), currentY + (17f * scale), whiteTextPaint)
-        canvas.drawText("البيان / الصنف", padding + colTotalW + colQtyW + colUnitW + ((widthPx - (2 * padding) - colTotalW - colQtyW - colUnitW - colNoW) / 2f), currentY + (17f * scale), whiteTextPaint)
-        canvas.drawText("العدد", padding + colTotalW + colUnitW + (colQtyW / 2f), currentY + (17f * scale), whiteTextPaint)
-        canvas.drawText("السعر", padding + colTotalW + (colUnitW / 2f), currentY + (17f * scale), whiteTextPaint)
-        canvas.drawText("الإجمالي", padding + (colTotalW / 2f), currentY + (17f * scale), whiteTextPaint)
+        tableHeaderPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("اسم الصنف", xDesc, currentY + (13f * scale), tableHeaderPaint)
 
-        currentY += tableHeaderHeight
+        tableHeaderPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText("الكمية", xQty, currentY + (13f * scale), tableHeaderPaint)
+        canvas.drawText("القيمة", xPrice, currentY + (13f * scale), tableHeaderPaint)
 
-        // 4. ITEMS ROWS
-        val rowDescPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 10f * scale
-            typeface = amiriTypeface
-        }
-        val rowNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 10.5f * scale
-            typeface = amiriBold
-            textAlign = Paint.Align.CENTER
-        }
+        tableHeaderPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("الإجمالية", xTotal, currentY + (13f * scale), tableHeaderPaint)
 
-        activeRows.forEachIndexed { idx, row ->
-            val rowY = currentY
+        currentY += tableHeaderH
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, thinLinePaint)
+        currentY += 2f * scale
+
+        // 4. ITEMS ROWS (تتابع صفوف مرتبة تحت تحت تحت)
+        val maxDescChars = (26 * (if (scale > 1f) 1.5f else 1.0f)).toInt()
+
+        activeRows.forEach { row ->
             val q = row.quantityStr.toDoubleOrNull() ?: 1.0
             val tot = row.total
             val unitVal = if (q > 0) tot / q else tot
 
-            // م
-            rowNumberPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText((idx + 1).toString().toEnglishDigits(), widthPx - padding - (colNoW / 2f), rowY + (17f * scale), rowNumberPaint)
-
-            // الإجمالي
-            rowNumberPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(formatter.format(tot).toEnglishDigits(), padding + (colTotalW / 2f), rowY + (17f * scale), rowNumberPaint)
-
-            // العدد
-            rowNumberPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(row.quantityStr.ifEmpty { "1" }.toEnglishDigits(), padding + colTotalW + colUnitW + (colQtyW / 2f), rowY + (17f * scale), rowNumberPaint)
-
-            // البيان
-            rowDescPaint.textAlign = Paint.Align.RIGHT
-            if (row.description.isNotBlank()) {
-                val maxChars = (24 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
-                val desc = if (row.description.length > maxChars) row.description.take(maxChars - 1) + ".." else row.description
-                canvas.drawText(desc, widthPx - padding - colNoW - (2f * scale), rowY + (17f * scale), rowDescPaint)
+            // اسم الصنف (Right aligned)
+            rowTextPaint.textAlign = Paint.Align.RIGHT
+            val desc = if (row.description.length > maxDescChars) {
+                row.description.take(maxDescChars - 1) + ".."
+            } else {
+                row.description.ifEmpty { "صنف" }
             }
+            canvas.drawText(desc, xDesc, currentY + (12.5f * scale), rowTextPaint)
 
-            // السعر
-            rowDescPaint.textAlign = Paint.Align.CENTER
-            if (unitVal > 0.0) {
-                canvas.drawText(formatter.format(unitVal).toEnglishDigits(), padding + colTotalW + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
-            }
+            // الكمية (Center aligned)
+            rowBoldPaint.textAlign = Paint.Align.CENTER
+            canvas.drawText(row.quantityStr.ifEmpty { "1" }.toEnglishDigits(), xQty, currentY + (12.5f * scale), rowBoldPaint)
 
-            canvas.drawLine(padding, rowY + rowHeight, widthPx - padding, rowY + rowHeight, thinLinePaint)
-            currentY += rowHeight
+            // القيمة (Center aligned)
+            rowTextPaint.textAlign = Paint.Align.CENTER
+            val priceStr = if (unitVal > 0.0) formatter.format(unitVal).toEnglishDigits() else "-"
+            canvas.drawText(priceStr, xPrice, currentY + (12.5f * scale), rowTextPaint)
+
+            // الإجمالية (Left aligned)
+            rowBoldPaint.textAlign = Paint.Align.LEFT
+            canvas.drawText(formatter.format(tot).toEnglishDigits(), xTotal, currentY + (12.5f * scale), rowBoldPaint)
+
+            currentY += rowH
+            canvas.drawLine(padding, currentY, widthPx - padding, currentY, dottedLinePaint)
+            currentY += 1.5f * scale
         }
 
+        currentY += 2f * scale
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
+        currentY += 3f * scale
+
+        // 5. FINANCIAL TOTALS BLOCK (الإجمالي العام -> الواصل -> المتبقي)
+        val currency = storeConfig.currencySymbol
+
+        // أ) الإجمالي العام
+        totalLabelPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("الإجمالي العام:", widthPx - padding, currentY + (14f * scale), totalLabelPaint)
+
+        totalValuePaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("${formatter.format(grandTotal).toEnglishDigits()} $currency", padding, currentY + (14f * scale), totalValuePaint)
+        currentY += 17f * scale
+
+        // ب) المبلغ الواصل
+        paidLabelPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("المبلغ الواصل:", widthPx - padding, currentY + (13f * scale), paidLabelPaint)
+
+        paidValuePaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("${formatter.format(receivedAmount).toEnglishDigits()} $currency", padding, currentY + (13f * scale), paidValuePaint)
+        currentY += 16f * scale
+
+        // ج) المتبقي للعميل أو عليه
+        val (remLabel, remVal) = when {
+            diff > 0.001 -> "المتبقي (عليه دين):" to "${formatter.format(diff).toEnglishDigits()} $currency"
+            diff < -0.001 -> "المتبقي (له رصيد):" to "${formatter.format(-diff).toEnglishDigits()} $currency"
+            else -> "المتبقي:" to "0.00 $currency (خالص)"
+        }
+        remLabelPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText(remLabel, widthPx - padding, currentY + (14f * scale), remLabelPaint)
+
+        remValuePaint.textAlign = Paint.Align.LEFT
+        canvas.drawText(remVal, padding, currentY + (14f * scale), remValuePaint)
+        currentY += 18f * scale
+
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
         currentY += 4f * scale
 
-        // 5. GRAND TOTAL DIRECTLY UNDERNEATH
-        canvas.drawRect(padding, currentY, widthPx - padding, currentY + grandTotalHeight, solidBlackFill)
+        // 6. SIGNATURES & CLOSING
+        footerPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("توقيع البائع: .........", widthPx - padding, currentY + (11f * scale), footerPaint)
 
-        whiteTextPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("المبلغ الإجمالي العام:", widthPx - padding - (6f * scale), currentY + (21f * scale), whiteTextPaint)
+        footerPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("توقيع العميل: .........", padding, currentY + (11f * scale), footerPaint)
+        currentY += 14f * scale
 
-        grandTotalNumberPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("${formatter.format(grandTotal).toEnglishDigits()} ${storeConfig.currencySymbol}", padding + (6f * scale), currentY + (21f * scale), grandTotalNumberPaint)
-
-        currentY += grandTotalHeight + (4f * scale)
-
-        // 6. PAID & REMAINING SECTION (المبلغ الواصل والمتبقي)
-        if (hasReceivedSection) {
-            val paidBoxH = 20f * scale
-            val remBoxH = 20f * scale
-
-            // الواصل
-            labelBoldPaint.textAlign = Paint.Align.RIGHT
-            canvas.drawText("المبلغ الواصل (المدفوع):", widthPx - padding - (4f * scale), currentY + (14f * scale), labelBoldPaint)
-            labelBoldPaint.textAlign = Paint.Align.LEFT
-            canvas.drawText("${formatter.format(receivedAmount).toEnglishDigits()} ${storeConfig.currencySymbol}", padding + (4f * scale), currentY + (14f * scale), labelBoldPaint)
-            currentY += paidBoxH
-
-            // المتبقي
-            labelBoldPaint.textAlign = Paint.Align.RIGHT
-            val remLabel = if (remaining > 0) "المتبقي (الدين):" else "حالة الحساب:"
-            val remVal = if (remaining > 0) "${formatter.format(remaining).toEnglishDigits()} ${storeConfig.currencySymbol}" else "خالص (مسدد بالكامل)"
-            canvas.drawText(remLabel, widthPx - padding - (4f * scale), currentY + (14f * scale), labelBoldPaint)
-            labelBoldPaint.textAlign = Paint.Align.LEFT
-            canvas.drawText(remVal, padding + (4f * scale), currentY + (14f * scale), labelBoldPaint)
-            currentY += remBoxH + (4f * scale)
-        }
-
-        // 7. ULTRA-COMPACT SIGNATURES & DISCLAIMER
-        smallBoldPaint.textSize = 9.5f * scale
-        smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("ت.البائع: ......", widthPx - padding, currentY + (13f * scale), smallBoldPaint)
-
-        smallBoldPaint.textAlign = Paint.Align.CENTER
-        val note = storeConfig.defaultDisclaimerNote.take(35)
-        canvas.drawText(note, widthPx / 2f, currentY + (13f * scale), smallBoldPaint)
-
-        smallBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("ت.المشتري: ......", padding, currentY + (13f * scale), smallBoldPaint)
+        footerPaint.textAlign = Paint.Align.CENTER
+        val note = storeConfig.defaultDisclaimerNote.ifEmpty { "شكراً لزيارتكم - أهلاً وسهلاً" }
+        canvas.drawText(note.take(45), widthPx / 2f, currentY + (10f * scale), footerPaint)
 
         return bitmap
     }
 
+    /**
+     * Helper to create receipt bitmap from invoice item entities.
+     */
     fun createReceiptBitmapFromItems(
         context: Context,
         storeConfig: StoreConfigEntity,
@@ -286,7 +303,7 @@ object ReceiptBitmapHelper {
         paymentType: String,
         items: List<InvoiceItemEntity>,
         receivedAmount: Double = 0.0,
-        widthPx: Int = 384
+        widthPx: Int = storeConfig.printerWidthDots
     ): Bitmap {
         val rows = items.map { item ->
             ReceiptRow(
@@ -310,221 +327,196 @@ object ReceiptBitmapHelper {
     }
 
     /**
-     * Thermal print voucher for a customer receipt (سند قبض نقدي)
+     * Thermal print voucher for a customer receipt (سند قبض نقدي) with pure white clarity and tight lines.
      */
     fun createVoucherBitmap(
         context: Context,
         storeConfig: StoreConfigEntity,
         receipt: CustomerReceiptEntity,
-        widthPx: Int = 384
+        widthPx: Int = storeConfig.printerWidthDots
     ): Bitmap {
         val baseWidth = 384f
         val scale = widthPx.toFloat() / baseWidth
 
-        val totalHeight = (270f * scale).toInt()
+        val padding = 4f * scale
+        val totalHeight = (225f * scale).toInt()
         val bitmap = Bitmap.createBitmap(widthPx, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
 
-        val amiriTypeface = ResourcesCompat.getFont(context, R.font.amiri) ?: Typeface.DEFAULT
-        val amiriBold = Typeface.create(amiriTypeface, Typeface.BOLD)
+        val titlePaint = getAmiriPaint(context, 19f * scale, isBold = true, align = Paint.Align.CENTER)
+        val subPaint = getAmiriPaint(context, 10.5f * scale, isBold = false, align = Paint.Align.CENTER)
+        val labelBoldPaint = getAmiriPaint(context, 11.5f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val amountBigPaint = getAmiriPaint(context, 16f * scale, isBold = true, align = Paint.Align.CENTER)
+        val footerPaint = getAmiriPaint(context, 9.5f * scale, isBold = false)
 
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val solidLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 20f * scale
-            typeface = amiriBold
-            textAlign = Paint.Align.CENTER
-        }
-        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.DKGRAY
-            textSize = 10f * scale
-            typeface = amiriTypeface
-            textAlign = Paint.Align.CENTER
-        }
-        val labelBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 12f * scale
-            typeface = amiriBold
-        }
-        val amountPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = 18f * scale
-            typeface = amiriBold
-            textAlign = Paint.Align.CENTER
-        }
-        val solidBlackFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            style = Paint.Style.FILL
+            strokeWidth = 1.2f * scale
         }
         val dottedLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.DKGRAY
-            strokeWidth = 1f * scale
-            pathEffect = DashPathEffect(floatArrayOf(4f * scale, 3f * scale), 0f)
+            color = Color.BLACK
+            strokeWidth = 0.8f * scale
+            pathEffect = DashPathEffect(floatArrayOf(3f * scale, 3f * scale), 0f)
+        }
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f * scale
         }
 
-        val padding = 10f * scale
-        var currentY = padding
+        var currentY = padding + (2f * scale)
 
         // Header
-        canvas.drawText(storeConfig.storeNameArabic.ifEmpty { "متجرنا" }, widthPx / 2f, currentY + (20f * scale), titlePaint)
-        currentY += 25f * scale
-        canvas.drawText("سند قبض وتسديد مالي #${receipt.receiptId.toString().toEnglishDigits()}", widthPx / 2f, currentY + (12f * scale), subPaint)
-        currentY += 18f * scale
+        canvas.drawText(storeConfig.storeNameArabic.ifEmpty { "متجرنا" }, widthPx / 2f, currentY + (17f * scale), titlePaint)
+        currentY += 21f * scale
+        canvas.drawText("سند قبض مالي #${receipt.receiptId.toString().toEnglishDigits()}", widthPx / 2f, currentY + (10f * scale), subPaint)
+        currentY += 15f * scale
 
-        canvas.drawLine(padding, currentY, widthPx - padding, currentY, dottedLinePaint)
-        currentY += 8f * scale
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
+        currentY += 4f * scale
 
         // Meta info
         labelBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("التاريخ: ${receipt.dateString.toEnglishDigits()}", widthPx - padding, currentY + (14f * scale), labelBoldPaint)
-        currentY += 18f * scale
+        canvas.drawText("التاريخ: ${receipt.dateString.toEnglishDigits()}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
+        currentY += 16f * scale
 
-        canvas.drawText("استلمنا من الأخ: ${receipt.customerName}", widthPx - padding, currentY + (14f * scale), labelBoldPaint)
-        currentY += 20f * scale
+        canvas.drawText("استلمنا من الأخ: ${receipt.customerName}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
+        currentY += 17f * scale
 
-        // Amount Box
-        val boxH = 34f * scale
-        canvas.drawRect(padding, currentY, widthPx - padding, currentY + boxH, solidBlackFill)
+        // Amount Box (Clear border, NO black background fill)
+        val boxH = 30f * scale
+        canvas.drawRect(padding, currentY, widthPx - padding, currentY + boxH, borderPaint)
         val amtStr = "مبلغ وقدره: ${formatter.format(receipt.amount).toEnglishDigits()} ${storeConfig.currencySymbol}"
-        canvas.drawText(amtStr, widthPx / 2f, currentY + (23f * scale), amountPaint)
-        currentY += boxH + (12f * scale)
+        canvas.drawText(amtStr, widthPx / 2f, currentY + (20f * scale), amountBigPaint)
+        currentY += boxH + (8f * scale)
 
         // Notes & Type
         labelBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("نوع الحركة: ${receipt.paymentType}", widthPx - padding, currentY + (14f * scale), labelBoldPaint)
-        currentY += 18f * scale
+        canvas.drawText("نوع الحركة: ${receipt.paymentType}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
+        currentY += 16f * scale
 
         if (receipt.notes.isNotEmpty()) {
-            canvas.drawText("البيان: ${receipt.notes}", widthPx - padding, currentY + (14f * scale), labelBoldPaint)
-            currentY += 18f * scale
+            canvas.drawText("البيان: ${receipt.notes}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
+            currentY += 16f * scale
         }
 
-        currentY += 8f * scale
-        canvas.drawLine(padding, currentY, widthPx - padding, currentY, dottedLinePaint)
-        currentY += 14f * scale
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
+        currentY += 5f * scale
 
         // Signatures
-        labelBoldPaint.textSize = 10f * scale
-        labelBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("المستلم / الصندوق: ......", widthPx - padding, currentY + (10f * scale), labelBoldPaint)
-        labelBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("المسدد: ......", padding, currentY + (10f * scale), labelBoldPaint)
+        footerPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("المستلم / الصندوق: .........", widthPx - padding, currentY + (10f * scale), footerPaint)
+        footerPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("المسدد: .........", padding, currentY + (10f * scale), footerPaint)
 
         return bitmap
     }
 
     /**
-     * Thermal print for consolidated customer statement (selected or full transactions)
+     * Thermal print for consolidated customer statement (كشف حساب العميل) with pure white clarity.
      */
     fun createCustomerStatementThermalBitmap(
         context: Context,
         storeConfig: StoreConfigEntity,
         customerName: String,
         statementRows: List<InvoicePdfHelper.CustomerStatementRow>,
-        widthPx: Int = 384
+        widthPx: Int = storeConfig.printerWidthDots
     ): Bitmap {
         val baseWidth = 384f
         val scale = widthPx.toFloat() / baseWidth
 
-        val headerH = 75f * scale
-        val rowH = 22f * scale
+        val padding = 4f * scale
+        val headerH = 50f * scale
+        val rowH = 17f * scale
         val tableH = (statementRows.size + 1) * rowH
-        val footerH = 65f * scale
-        val padding = 8f * scale
-        val totalH = (headerH + tableH + footerH + (20f * scale)).toInt().coerceAtLeast(300)
+        val footerH = 46f * scale
+        val totalH = (headerH + tableH + footerH + (12f * scale)).toInt().coerceAtLeast(200)
 
         val bitmap = Bitmap.createBitmap(widthPx, totalH, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
 
-        val amiriTypeface = ResourcesCompat.getFont(context, R.font.amiri) ?: Typeface.DEFAULT
-        val amiriBold = Typeface.create(amiriTypeface, Typeface.BOLD)
+        val titlePaint = getAmiriPaint(context, 18.5f * scale, isBold = true, align = Paint.Align.CENTER)
+        val subPaint = getAmiriPaint(context, 10.5f * scale, isBold = false, align = Paint.Align.CENTER)
+        val tableHeaderPaint = getAmiriPaint(context, 10.5f * scale, isBold = true)
+        val boldPaint = getAmiriPaint(context, 10f * scale, isBold = true)
+        val regularPaint = getAmiriPaint(context, 9.5f * scale, isBold = false)
+        val footerLabelPaint = getAmiriPaint(context, 12f * scale, isBold = true, align = Paint.Align.RIGHT)
+        val footerValPaint = getAmiriPaint(context, 13f * scale, isBold = true, align = Paint.Align.LEFT)
 
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val solidLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 19f * scale
-            typeface = amiriBold
-            textAlign = Paint.Align.CENTER
-        }
-        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.DKGRAY
-            textSize = 10f * scale
-            typeface = amiriTypeface
-            textAlign = Paint.Align.CENTER
-        }
-        val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 10.5f * scale
-            typeface = amiriBold
-        }
-        val regularPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 9.5f * scale
-            typeface = amiriTypeface
-        }
-        val solidBlackFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            style = Paint.Style.FILL
-        }
-        val whiteText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = 10.5f * scale
-            typeface = amiriBold
-            textAlign = Paint.Align.CENTER
+            strokeWidth = 1.2f * scale
         }
         val thinLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.LTGRAY
+            color = Color.BLACK
             strokeWidth = 0.8f * scale
         }
+        val dottedLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            strokeWidth = 0.8f * scale
+            pathEffect = DashPathEffect(floatArrayOf(3f * scale, 3f * scale), 0f)
+        }
 
-        var currentY = padding
+        var currentY = padding + (2f * scale)
 
         // Header
-        canvas.drawText(storeConfig.storeNameArabic.ifEmpty { "متجرنا" }, widthPx / 2f, currentY + (18f * scale), titlePaint)
-        currentY += 22f * scale
-        canvas.drawText("كشف حساب: $customerName", widthPx / 2f, currentY + (12f * scale), subPaint)
-        currentY += 16f * scale
+        canvas.drawText(storeConfig.storeNameArabic.ifEmpty { "متجرنا" }, widthPx / 2f, currentY + (16f * scale), titlePaint)
+        currentY += 20f * scale
+        canvas.drawText("كشف حساب: $customerName", widthPx / 2f, currentY + (10f * scale), subPaint)
+        currentY += 14f * scale
 
-        // Table Header
-        canvas.drawRect(padding, currentY, widthPx - padding, currentY + rowH, solidBlackFill)
-        canvas.drawText("التاريخ", widthPx - padding - (45f * scale), currentY + (15f * scale), whiteText)
-        canvas.drawText("العملية", widthPx - padding - (110f * scale), currentY + (15f * scale), whiteText)
-        canvas.drawText("المبلغ", padding + (90f * scale), currentY + (15f * scale), whiteText)
-        canvas.drawText("الرصيد", padding + (35f * scale), currentY + (15f * scale), whiteText)
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLine)
+        currentY += 3f * scale
+
+        // Table Header (التاريخ | العملية | المبلغ | الرصيد)
+        tableHeaderPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("التاريخ", widthPx - padding, currentY + (12f * scale), tableHeaderPaint)
+        canvas.drawText("العملية", widthPx - padding - (54f * scale), currentY + (12f * scale), tableHeaderPaint)
+
+        tableHeaderPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText("المبلغ", padding + (92f * scale), currentY + (12f * scale), tableHeaderPaint)
+
+        tableHeaderPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("الرصيد", padding, currentY + (12f * scale), tableHeaderPaint)
         currentY += rowH
 
-        // Rows
-        boldPaint.textSize = 9.5f * scale
-        regularPaint.textSize = 9f * scale
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, thinLine)
+        currentY += 2f * scale
 
+        // Rows
         statementRows.forEach { r ->
             regularPaint.textAlign = Paint.Align.RIGHT
-            canvas.drawText(r.date.takeLast(5).toEnglishDigits(), widthPx - padding - (5f * scale), currentY + (15f * scale), regularPaint)
+            canvas.drawText(r.date.takeLast(5).toEnglishDigits(), widthPx - padding, currentY + (12f * scale), regularPaint)
 
             boldPaint.textAlign = Paint.Align.RIGHT
-            val desc = r.type.take(12)
-            canvas.drawText(desc, widthPx - padding - (60f * scale), currentY + (15f * scale), boldPaint)
+            val desc = r.type.take(13)
+            canvas.drawText(desc, widthPx - padding - (54f * scale), currentY + (12f * scale), boldPaint)
 
             val amt = if (r.debit > 0) r.debit else r.credit
             boldPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(formatter.format(amt).toEnglishDigits(), padding + (90f * scale), currentY + (15f * scale), boldPaint)
+            canvas.drawText(formatter.format(amt).toEnglishDigits(), padding + (92f * scale), currentY + (12f * scale), boldPaint)
 
             boldPaint.textAlign = Paint.Align.LEFT
-            canvas.drawText(formatter.format(r.runningBalance).toEnglishDigits(), padding + (5f * scale), currentY + (15f * scale), boldPaint)
+            canvas.drawText(formatter.format(r.runningBalance).toEnglishDigits(), padding, currentY + (12f * scale), boldPaint)
 
-            canvas.drawLine(padding, currentY + rowH, widthPx - padding, currentY + rowH, thinLine)
             currentY += rowH
+            canvas.drawLine(padding, currentY, widthPx - padding, currentY, dottedLine)
+            currentY += 1.5f * scale
         }
 
-        currentY += 8f * scale
+        currentY += 3f * scale
+        canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLine)
+        currentY += 4f * scale
 
-        // Net Balance Box
+        // Final Balance
         val lastBal = statementRows.lastOrNull()?.runningBalance ?: 0.0
-        canvas.drawRect(padding, currentY, widthPx - padding, currentY + (28f * scale), solidBlackFill)
-        whiteText.textAlign = Paint.Align.RIGHT
-        canvas.drawText("الرصيد النهائي المستحق:", widthPx - padding - (8f * scale), currentY + (18f * scale), whiteText)
-        whiteText.textAlign = Paint.Align.LEFT
-        canvas.drawText("${formatter.format(lastBal).toEnglishDigits()} ${storeConfig.currencySymbol}", padding + (8f * scale), currentY + (18f * scale), whiteText)
+        val balLabel = if (lastBal > 0) "الرصيد المستحق (عليه):" else if (lastBal < 0) "الرصيد المتبقي (له):" else "الرصيد النهائي:"
+        val balVal = "${formatter.format(Math.abs(lastBal)).toEnglishDigits()} ${storeConfig.currencySymbol}" + (if (lastBal == 0.0) " (خالص)" else "")
+
+        canvas.drawText(balLabel, widthPx - padding, currentY + (14f * scale), footerLabelPaint)
+        canvas.drawText(balVal, padding, currentY + (14f * scale), footerValPaint)
 
         return bitmap
     }

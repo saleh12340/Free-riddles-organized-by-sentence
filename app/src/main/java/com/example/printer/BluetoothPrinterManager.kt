@@ -51,16 +51,68 @@ class BluetoothPrinterManager(private val context: Context) {
         _connectionState.value = PrinterConnectionState.Connecting
         try {
             disconnect()
-            socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
             bluetoothAdapter?.cancelDiscovery()
-            socket?.connect()
-            outputStream = socket?.outputStream
 
-            _connectionState.value = PrinterConnectionState.Connected(
-                deviceName = device.name ?: "طابعة حرارية",
-                deviceAddress = device.address
-            )
-            true
+            var connectedSocket: BluetoothSocket? = null
+            var lastError: Exception? = null
+
+            // Fallback strategy 1: Standard SPP RFCOMM
+            try {
+                val s = device.createRfcommSocketToServiceRecord(SPP_UUID)
+                s.connect()
+                connectedSocket = s
+            } catch (e: Exception) {
+                lastError = e
+            }
+
+            // Fallback strategy 2: Insecure SPP RFCOMM
+            if (connectedSocket == null || !connectedSocket.isConnected) {
+                try {
+                    val s = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
+                    s.connect()
+                    connectedSocket = s
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+
+            // Fallback strategy 3: Reflection on RFCOMM Channel 1 (Standard POS thermal printer channel)
+            if (connectedSocket == null || !connectedSocket.isConnected) {
+                try {
+                    val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+                    val s = m.invoke(device, 1) as BluetoothSocket
+                    s.connect()
+                    connectedSocket = s
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+
+            // Fallback strategy 4: Reflection insecure on RFCOMM Channel 1
+            if (connectedSocket == null || !connectedSocket.isConnected) {
+                try {
+                    val m = device.javaClass.getMethod("createInsecureRfcommSocket", Int::class.javaPrimitiveType)
+                    val s = m.invoke(device, 1) as BluetoothSocket
+                    s.connect()
+                    connectedSocket = s
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+
+            if (connectedSocket != null && connectedSocket.isConnected) {
+                socket = connectedSocket
+                outputStream = connectedSocket.outputStream
+                _connectionState.value = PrinterConnectionState.Connected(
+                    deviceName = device.name ?: "طابعة حرارية",
+                    deviceAddress = device.address
+                )
+                true
+            } else {
+                disconnect()
+                _connectionState.value = PrinterConnectionState.Error("تعذر الاتصال بالطابعة: ${lastError?.localizedMessage ?: "تأكد من تشغيل الطابعة وتأكيد الاقتران"}")
+                false
+            }
         } catch (e: Exception) {
             disconnect()
             _connectionState.value = PrinterConnectionState.Error("تعذر الاتصال بالطابعة: ${e.localizedMessage ?: "تأكد من تشغيل الطابعة وتأكيد الاقتران"}")

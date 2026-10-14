@@ -268,14 +268,24 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun printInvoiceAsBitmap(bitmap: Bitmap) {
+    fun printInvoiceAsBitmap(bitmap: Bitmap, widthDots: Int? = null) {
         viewModelScope.launch {
-            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap)
+            val targetWidth = widthDots ?: (storeConfig.value?.printerWidthDots ?: 384)
+            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap, targetWidth)
             result.onSuccess {
                 _uiEventMessage.value = "تمت طباعة الفاتورة حرارياً بنجاح!"
             }.onFailure { e ->
                 _uiEventMessage.value = e.message ?: "خطأ في الطباعة"
             }
+        }
+    }
+
+    fun updatePrinterPaperWidth(paperWidthMm: Int) {
+        viewModelScope.launch {
+            val current = storeConfig.value ?: StoreConfigEntity()
+            val updated = current.copy(printerPaperWidth = paperWidthMm)
+            repository.saveStoreConfig(updated)
+            _uiEventMessage.value = "تم تعيين مقاس ورق الطابعة إلى ${paperWidthMm} مم"
         }
     }
 
@@ -513,12 +523,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     fun printCustomerReceiptVoucher(receipt: CustomerReceiptEntity) {
         viewModelScope.launch {
             val config = storeConfig.value ?: StoreConfigEntity()
+            val width = config.printerWidthDots
             val bitmap = ReceiptBitmapHelper.createVoucherBitmap(
                 context = getApplication(),
                 storeConfig = config,
-                receipt = receipt
+                receipt = receipt,
+                widthPx = width
             )
-            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap)
+            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap, width)
             result.onSuccess {
                 _uiEventMessage.value = "تمت طباعة سند القبض حرارياً بنجاح!"
             }.onFailure { e ->
@@ -530,13 +542,15 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     fun printCustomerStatementSummary(customerName: String, statementRows: List<InvoicePdfHelper.CustomerStatementRow>) {
         viewModelScope.launch {
             val config = storeConfig.value ?: StoreConfigEntity()
+            val width = config.printerWidthDots
             val bitmap = ReceiptBitmapHelper.createCustomerStatementThermalBitmap(
                 context = getApplication(),
                 storeConfig = config,
                 customerName = customerName,
-                statementRows = statementRows
+                statementRows = statementRows,
+                widthPx = width
             )
-            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap)
+            val result = bluetoothPrinterManager.printReceiptBitmap(bitmap, width)
             result.onSuccess {
                 _uiEventMessage.value = "تمت طباعة تقرير كشف الحساب حرارياً!"
             }.onFailure { e ->

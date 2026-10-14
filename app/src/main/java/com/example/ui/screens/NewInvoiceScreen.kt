@@ -476,6 +476,7 @@ fun NewInvoiceScreen(
             viewModel.receivedAmountStr,
             storeConfig
         ) {
+            val widthDots = storeConfig.printerWidthDots
             val receiptBitmap = ReceiptBitmapHelper.createReceiptBitmap(
                 context = context,
                 storeConfig = storeConfig,
@@ -485,9 +486,9 @@ fun NewInvoiceScreen(
                 paymentType = viewModel.paymentType,
                 rows = viewModel.receiptRows,
                 receivedAmount = viewModel.getReceivedAmount(),
-                widthPx = 384
+                widthPx = widthDots
             )
-            ThermalImageConverter.prepareForThermalPrinter(receiptBitmap, targetWidthDots = 384)
+            ThermalImageConverter.prepareForThermalPrinter(receiptBitmap, targetWidthDots = widthDots)
         }
 
         AlertDialog(
@@ -495,7 +496,7 @@ fun NewInvoiceScreen(
             containerColor = NeuSurface,
             title = {
                 Text(
-                    "معاينة الطباعة الحرارية",
+                    "معاينة الطباعة الحرارية (${storeConfig.printerPaperWidth} مم)",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = NeuTextPrimary
@@ -510,7 +511,7 @@ fun NewInvoiceScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "هذه صورة أبيض وأسود بعرض 384 نقطة (ورق 58 مم)، وهي الصورة التي ستُرسل للطابعة.",
+                        "هذه صورة عالية الوضوح بعرض ${storeConfig.printerWidthDots} نقطة (ورق ${storeConfig.printerPaperWidth} مم)، وهي الصورة التي ستُرسل للطابعة.",
                         fontSize = 11.sp,
                         color = NeuTextSecondary
                     )
@@ -530,7 +531,7 @@ fun NewInvoiceScreen(
                 NeuButton(
                     onClick = {
                         if (printerState is PrinterConnectionState.Connected) {
-                            viewModel.printInvoiceAsBitmap(thermalBitmap)
+                            viewModel.printInvoiceAsBitmap(thermalBitmap, storeConfig.printerWidthDots)
                             showThermalPreviewDialog = false
                         } else {
                             Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً", Toast.LENGTH_SHORT).show()

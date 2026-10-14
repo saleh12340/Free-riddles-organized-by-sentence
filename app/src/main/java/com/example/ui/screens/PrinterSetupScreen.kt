@@ -44,7 +44,8 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
     val config = storeConfigState ?: StoreConfigEntity()
 
     var pairedDevices by remember { mutableStateOf<List<BluetoothDevice>>(emptyList()) }
-    var selectedPaperWidthDots by remember { mutableStateOf(384) } // 384 = 58mm POS, 576 = 80mm POS
+    val currentPaperWidth = config.printerPaperWidth
+    val selectedPaperWidthDots = config.printerWidthDots
 
     val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -209,30 +210,30 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
 
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         NeuButton(
-                            onClick = { selectedPaperWidthDots = 384 },
+                            onClick = { viewModel.updatePrinterPaperWidth(58) },
                             modifier = Modifier.height(30.dp),
                             shape = RoundedCornerShape(6.dp),
-                            isPrimary = selectedPaperWidthDots == 384
+                            isPrimary = currentPaperWidth == 58
                         ) {
                             Text(
                                 text = "58 مم",
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (selectedPaperWidthDots == 384) Color.White else NeuTextPrimary
+                                color = if (currentPaperWidth == 58) Color.White else NeuTextPrimary
                             )
                         }
 
                         NeuButton(
-                            onClick = { selectedPaperWidthDots = 576 },
+                            onClick = { viewModel.updatePrinterPaperWidth(80) },
                             modifier = Modifier.height(30.dp),
                             shape = RoundedCornerShape(6.dp),
-                            isPrimary = selectedPaperWidthDots == 576
+                            isPrimary = currentPaperWidth == 80
                         ) {
                             Text(
                                 text = "80 مم",
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (selectedPaperWidthDots == 576) Color.White else NeuTextPrimary
+                                color = if (currentPaperWidth == 80) Color.White else NeuTextPrimary
                             )
                         }
                     }
@@ -246,24 +247,25 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                         context = context,
                         storeConfig = config,
                         invoiceNumber = 9999,
-                        dateString = "2026/10/08",
+                        dateString = "2026/10/14",
                         customerName = "تجربة طباعة الفاتورة",
                         paymentType = "نقداً",
                         rows = listOf(
                             com.example.ui.viewmodels.ReceiptRow(
-                                description = "صنف تجريبي 1",
+                                description = "أرز بسمتي فاخر",
                                 quantityStr = "1",
-                                totalAmountStr = "500"
+                                totalAmountStr = "1500"
                             ),
                             com.example.ui.viewmodels.ReceiptRow(
-                                description = "صنف تجريبي 2",
+                                description = "زيت طبخ 2 لتر",
                                 quantityStr = "2",
-                                totalAmountStr = "1000"
+                                totalAmountStr = "2400"
                             )
                         ),
+                        receivedAmount = 3000.0,
                         widthPx = selectedPaperWidthDots
                     )
-                    viewModel.printInvoiceAsBitmap(testBitmap)
+                    viewModel.printInvoiceAsBitmap(testBitmap, selectedPaperWidthDots)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

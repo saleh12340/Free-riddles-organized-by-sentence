@@ -113,7 +113,7 @@ object ThermalImageConverter {
         }
 
         // Feed paper lines & cut command
-        output.write(byteArrayOf(0x1B, 0x64, 0x04)) // Feed 4 lines
+        output.write(byteArrayOf(0x1B, 0x64, 0x02)) // Feed 2 lines to save paper
         output.write(byteArrayOf(0x1D, 0x56, 0x41, 0x00)) // Partial paper cut
 
         return output.toByteArray()

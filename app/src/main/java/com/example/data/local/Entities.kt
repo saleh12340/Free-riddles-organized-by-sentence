@@ -17,8 +17,12 @@ data class StoreConfigEntity(
     val phone2: String = "770000000",
     val currencySymbol: String = "ر.ي",
     val nextInvoiceNumber: Int = 1118,
-    val defaultDisclaimerNote: String = "البضاعة المباعة لا ترد ولا تستبدل بعد خروجها من المحل"
-)
+    val defaultDisclaimerNote: String = "البضاعة المباعة لا ترد ولا تستبدل بعد خروجها من المحل",
+    val printerPaperWidth: Int = 58 // 58 or 80 mm
+) {
+    val printerWidthDots: Int
+        get() = if (printerPaperWidth == 80) 576 else 384
+}
 
 @Entity(tableName = "invoices")
 data class InvoiceEntity(
