@@ -4,9 +4,12 @@ import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.StoreConfigEntity
 import com.example.printer.PrinterConnectionState
+import com.example.printer.ThermalImageConverter
 import com.example.ui.components.InteractiveReceiptView
 import com.example.ui.components.AutoSelectBasicTextField
 import com.example.ui.components.ReceiptBitmapHelper
@@ -58,6 +64,7 @@ fun NewInvoiceScreen(
 
     var showProductPickerSheet by remember { mutableStateOf(false) }
     var showPreviewDialog by remember { mutableStateOf(false) }
+    var showThermalPreviewDialog by remember { mutableStateOf(false) }
     var showClearInvoiceDialog by remember { mutableStateOf(false) }
 
     val formatter = DecimalFormat("#,##0.##")
@@ -268,27 +275,7 @@ fun NewInvoiceScreen(
 
                     // 2. Thermal Print Button (Vibrant #0072ff Glow)
                     NeuButton(
-                        onClick = {
-                            try {
-                                val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
-                                    context = context,
-                                    storeConfig = storeConfig,
-                                    invoiceNumber = viewModel.invoiceNumber,
-                                    dateString = viewModel.dateString,
-                                    customerName = viewModel.customerName,
-                                    paymentType = viewModel.paymentType,
-                                    rows = viewModel.receiptRows
-                                )
-                                if (printerState is PrinterConnectionState.Connected) {
-                                    viewModel.printInvoiceAsBitmap(bitmap)
-                                } else {
-                                    Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
-                                    onNavigateToPrinterSetup()
-                                }
-                            } catch (e: Throwable) {
-                                Toast.makeText(context, "تعذر تجهيز الفاتورة للطباعة: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                            }
-                        },
+                        onClick = { showThermalPreviewDialog = true },
                         modifier = Modifier
                             .weight(1.3f)
                             .height(34.dp),
@@ -470,6 +457,93 @@ fun NewInvoiceScreen(
                 }
             }
         }
+    }
+
+    // Exact thermal bitmap preview: the same monochrome 384-dot bitmap is sent to Bluetooth.
+    if (showThermalPreviewDialog) {
+        val thermalRowsKey = viewModel.receiptRows.map { "${it.description}|${it.quantityStr}|${it.totalAmountStr}" }
+        val thermalBitmap = remember(
+            viewModel.invoiceNumber,
+            viewModel.dateString,
+            viewModel.customerName,
+            viewModel.paymentType,
+            thermalRowsKey,
+            storeConfig
+        ) {
+            val receiptBitmap = ReceiptBitmapHelper.createReceiptBitmap(
+                context = context,
+                storeConfig = storeConfig,
+                invoiceNumber = viewModel.invoiceNumber,
+                dateString = viewModel.dateString,
+                customerName = viewModel.customerName,
+                paymentType = viewModel.paymentType,
+                rows = viewModel.receiptRows,
+                widthPx = 384
+            )
+            ThermalImageConverter.prepareForThermalPrinter(receiptBitmap, targetWidthDots = 384)
+        }
+
+        AlertDialog(
+            onDismissRequest = { showThermalPreviewDialog = false },
+            containerColor = NeuSurface,
+            title = {
+                Text(
+                    "معاينة الطباعة الحرارية",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = NeuTextPrimary
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 520.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "هذه صورة أبيض وأسود بعرض 384 نقطة (ورق 58 مم)، وهي الصورة التي ستُرسل للطابعة.",
+                        fontSize = 11.sp,
+                        color = NeuTextSecondary
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Image(
+                        bitmap = thermalBitmap.asImageBitmap(),
+                        contentDescription = "معاينة الصورة الحرارية النهائية",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(4.dp),
+                        contentScale = ContentScale.FillWidth
+                    )
+                }
+            },
+            confirmButton = {
+                NeuButton(
+                    onClick = {
+                        if (printerState is PrinterConnectionState.Connected) {
+                            viewModel.printInvoiceAsBitmap(thermalBitmap)
+                            showThermalPreviewDialog = false
+                        } else {
+                            Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً", Toast.LENGTH_SHORT).show()
+                            showThermalPreviewDialog = false
+                            onNavigateToPrinterSetup()
+                        }
+                    },
+                    isPrimary = true
+                ) {
+                    Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                    Spacer(Modifier.width(6.dp))
+                    Text("طباعة هذه الصورة", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showThermalPreviewDialog = false }) {
+                    Text("رجوع للتعديل", color = NeuTextSecondary)
+                }
+            }
+        )
     }
 
     // Invoice Image Preview & Share Dialog
