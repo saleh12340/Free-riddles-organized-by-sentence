@@ -352,6 +352,13 @@ fun CustomersScreen(
                     onClick = {
                         val cleanName = newCustomerName.trim()
                         if (cleanName.isNotBlank()) {
+                            val duplicate = (invoices.map { it.invoice.customerName.trim() } +
+                                allReceipts.map { it.customerName.trim() })
+                                .any { it.equals(cleanName, ignoreCase = true) }
+                            if (duplicate) {
+                                Toast.makeText(context, "اسم العميل مسجل مسبقاً، اختره من القائمة", Toast.LENGTH_LONG).show()
+                                return@NeuButton
+                            }
                             val initBal = initialBalanceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
                             if (initBal > 0) {
                                 if (initialBalanceType == "مدين (عليه دين)") {
@@ -386,8 +393,8 @@ fun CustomersScreen(
 
     // --- CUSTOMER DETAIL & ACCOUNT STATEMENT DIALOG ---
     selectedCustomer?.let { name ->
-        val customerInvoices = invoices.filter { it.invoice.customerName.trim() == name }.sortedBy { it.invoice.invoiceId }
-        val customerReceipts = allReceipts.filter { it.customerName.trim() == name }.sortedBy { it.receiptId }
+        val customerInvoices = invoices.filter { it.invoice.customerName.trim() == name }.sortedByDescending { it.invoice.createdAtTimestamp }
+        val customerReceipts = allReceipts.filter { it.customerName.trim() == name }.sortedByDescending { it.createdAtTimestamp }
 
         var amountStr by remember { mutableStateOf("") }
         var paymentTypeChoice by remember { mutableStateOf("سند قبض نقدي") }
@@ -427,7 +434,7 @@ fun CustomersScreen(
                     )
                 )
             }
-            txs.sortedBy { it.id }
+            txs.sortedWith(compareByDescending<CustomerTx> { it.date }.thenByDescending { it.id })
         }
 
         AlertDialog(
