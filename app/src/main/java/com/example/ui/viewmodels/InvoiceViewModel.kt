@@ -220,7 +220,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 // Advance to next invoice number and prepare fresh rows
                 invoiceNumber = repository.getNextInvoiceNumber()
                 customerName = ""
-                discountAmountStr = ""
+                receivedAmountStr = ""
                 receiptRows.clear()
                 repeat(DEFAULT_ROW_COUNT) {
                     receiptRows.add(ReceiptRow())
@@ -240,7 +240,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         customerName = inv.customerName
         paymentType = inv.paymentType
         notes = inv.notes
-        discountAmountStr = if (inv.discount > 0) inv.discount.toString() else ""
+        receivedAmountStr = if (inv.discount > 0) inv.discount.toString() else ""
 
         receiptRows.clear()
         invoiceWithItems.items.forEach { item ->
