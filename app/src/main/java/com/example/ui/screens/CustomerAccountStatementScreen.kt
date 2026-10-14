@@ -489,7 +489,7 @@ fun CustomerAccountStatementScreen(
                     }
                 }
             } else {
-                var runningBalance = 0.0
+                var runningBalance = remainingBalance
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -497,12 +497,9 @@ fun CustomerAccountStatementScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(combinedTransactions, key = { "${it.rawType}_${it.id}" }) { tx ->
-                        if (tx.isDebit) {
-                            runningBalance += tx.amount
-                        } else {
-                            runningBalance -= tx.amount
-                        }
                         val currentRunBal = runningBalance
+                        // Rows are newest-first; reverse this transaction to derive the balance after the previous older transaction.
+                        runningBalance = if (tx.isDebit) runningBalance - tx.amount else runningBalance + tx.amount
 
                         NeuCard(
                             modifier = Modifier.fillMaxWidth(),
