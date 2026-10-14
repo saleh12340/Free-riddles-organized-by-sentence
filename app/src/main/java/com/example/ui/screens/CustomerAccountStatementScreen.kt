@@ -62,12 +62,12 @@ fun CustomerAccountStatementScreen(
 
     val customerInvoices = remember(invoices, customerName) {
         invoices.filter { it.invoice.customerName.trim() == customerName.trim() }
-            .sortedBy { it.invoice.invoiceId }
+            .sortedWith(compareByDescending<InvoiceWithItems> { it.invoice.dateString }.thenByDescending { it.invoice.createdAtTimestamp }.thenByDescending { it.invoice.invoiceId })
     }
 
     val customerReceipts = remember(allReceipts, customerName) {
         allReceipts.filter { it.customerName.trim() == customerName.trim() }
-            .sortedBy { it.receiptId }
+            .sortedWith(compareByDescending<CustomerReceiptEntity> { it.dateString }.thenByDescending { it.createdAtTimestamp }.thenByDescending { it.receiptId })
     }
 
     var amountStr by remember { mutableStateOf("") }
@@ -109,7 +109,7 @@ fun CustomerAccountStatementScreen(
                 )
             )
         }
-        txs.sortedBy { it.id }
+        txs.sortedWith(compareByDescending<CustomerTx> { it.date }.thenByDescending { it.id })
     }
 
     Scaffold(
