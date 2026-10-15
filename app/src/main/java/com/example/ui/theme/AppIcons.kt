@@ -624,5 +624,61 @@ object AppIcons {
             }
         }.build()
     }
+
+    val Mic: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Mic",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(12f, 14f)
+                curveToRelative(1.66f, 0f, 3.0f, -1.34f, 3.0f, -3.0f)
+                verticalLineTo(5f)
+                curveToRelative(0f, -1.66f, -1.34f, -3f, -3f, -3f)
+                reflectiveCurveTo(9f, 3.34f, 9f, 5f)
+                verticalLineToRelative(6f)
+                curveToRelative(0f, 1.66f, 1.34f, 3f, 3f, 3f)
+                close()
+                moveTo(17f, 11f)
+                curveToRelative(0f, 2.76f, -2.24f, 5f, -5f, 5f)
+                reflectiveCurveToRelative(-5f, -2.24f, -5f, -5f)
+                horizontalLineTo(5f)
+                curveToRelative(0f, 3.53f, 2.61f, 6.43f, 6f, 6.92f)
+                verticalLineTo(21f)
+                horizontalLineToRelative(2f)
+                verticalLineToRelative(-3.08f)
+                curveToRelative(3.39f, -0.49f, 6f, -3.39f, 6f, -6.92f)
+                horizontalLineToRelative(-2f)
+                close()
+            }
+        }.build()
+    }
+
+    val Undo: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Undo",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(12.5f, 8f)
+                curveToRelative(-2.65f, 0f, -5.05f, 0.99f, -6.9f, 2.6f)
+                lineTo(2f, 7f)
+                verticalLineToRelative(9f)
+                horizontalLineToRelative(9f)
+                lineToRelative(-3.62f, -3.62f)
+                curveToRelative(1.39f, -1.16f, 3.16f, -1.88f, 5.12f, -1.88f)
+                curveToRelative(3.54f, 0f, 6.55f, 2.31f, 7.6f, 5.5f)
+                lineToRelative(2.37f, -0.78f)
+                curveTo(21.08f, 11.03f, 17.15f, 8f, 12.5f, 8f)
+                close()
+            }
+        }.build()
+    }
 }
 

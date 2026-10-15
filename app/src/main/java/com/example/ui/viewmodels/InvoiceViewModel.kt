@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.ui.util.toEnglishDigits
+import com.example.ui.util.VoiceInvoiceParser
+import com.example.ui.util.ParsedVoiceItem
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -82,6 +84,70 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     // Single-column expanding rows: Starts with DEFAULT_ROW_COUNT
     val receiptRows = mutableStateListOf<ReceiptRow>()
+
+    // Voice Input State
+    var lastSpokenVoiceText by mutableStateOf("")
+        private set
+    var lastParsedVoiceItems by mutableStateOf<List<ParsedVoiceItem>>(emptyList())
+        private set
+    private var previousReceiptRowsSnapshot: List<ReceiptRow>? = null
+    var canUndoVoiceInput by mutableStateOf(false)
+        private set
+
+    fun processVoiceInput(spokenText: String): Int {
+        val clean = spokenText.trim()
+        if (clean.isBlank()) return 0
+        lastSpokenVoiceText = clean
+        val parsed = VoiceInvoiceParser.parseVoiceInput(clean)
+        if (parsed.isEmpty()) {
+            _uiEventMessage.value = "لم يتم التعرف على أي صنف من الصوت المنطوق"
+            return 0
+        }
+
+        // Save snapshot for 1-click Undo
+        previousReceiptRowsSnapshot = receiptRows.map { it.copy() }
+        canUndoVoiceInput = true
+        lastParsedVoiceItems = parsed
+
+        // Remove trailing empty rows first so we append cleanly
+        while (receiptRows.isNotEmpty() && receiptRows.last().isCompletelyEmpty) {
+            receiptRows.removeAt(receiptRows.lastIndex)
+        }
+
+        // Append parsed items
+        parsed.forEach { item ->
+            receiptRows.add(
+                ReceiptRow(
+                    description = item.description,
+                    quantityStr = item.quantity,
+                    totalAmountStr = item.totalAmount
+                )
+            )
+        }
+
+        // Always keep an empty trailing row for quick manual entry
+        receiptRows.add(ReceiptRow())
+
+        _uiEventMessage.value = "تمت إضافة ${parsed.size} صنف بالصوت تلقائياً إلى الفاتورة"
+        return parsed.size
+    }
+
+    fun undoLastVoiceInput() {
+        val snapshot = previousReceiptRowsSnapshot ?: return
+        receiptRows.clear()
+        receiptRows.addAll(snapshot)
+        previousReceiptRowsSnapshot = null
+        canUndoVoiceInput = false
+        lastParsedVoiceItems = emptyList()
+        _uiEventMessage.value = "تم التراجع عن الأصناف المضافة بالصوت"
+    }
+
+    fun clearVoiceBar() {
+        lastSpokenVoiceText = ""
+        lastParsedVoiceItems = emptyList()
+        canUndoVoiceInput = false
+        previousReceiptRowsSnapshot = null
+    }
 
     var searchQuery by mutableStateOf("")
 

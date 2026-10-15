@@ -1,8 +1,14 @@
 package com.example.ui.screens
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -314,6 +320,14 @@ fun NewInvoiceScreen(
                 .padding(horizontal = 4.dp, vertical = 2.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            // 0. SMART VOICE INPUT BAR (AT TOP OF PAGE WITH TEXT WRAPPING)
+            item {
+                VoiceInvoiceInputBar(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
+
             // 1. QUICK ITEM ENTRY RULER ROW (AT TOP OF PAGE)
             item {
                 QuickItemRulerBar(
@@ -1002,6 +1016,204 @@ private fun SmartRulerInputBox(
                 textAlign = align,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+@Composable
+fun VoiceInvoiceInputBar(
+    viewModel: InvoiceViewModel,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var isListening by remember { mutableStateOf(false) }
+
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isListening = false
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val spokenMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = spokenMatches?.firstOrNull() ?: ""
+            if (spokenText.isNotBlank()) {
+                viewModel.processVoiceInput(spokenText)
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                isListening = true
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-SA")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-SA")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث لنطق الصنف (مثال: 2 كرتون عصير 4000 أو 15000 سكر 5)")
+                }
+                speechLauncher.launch(intent)
+            } catch (e: Exception) {
+                isListening = false
+                Toast.makeText(context, "محرك البحث الصوتي من Google غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "يرجى منح إذن المايكروفون لاستخدام الإدخال الصوتي", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun startVoiceListening() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            try {
+                isListening = true
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-SA")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-SA")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث لنطق الصنف (مثال: 2 كرتون عصير 4000 أو 15000 سكر 5)")
+                }
+                speechLauncher.launch(intent)
+            } catch (e: Exception) {
+                isListening = false
+                Toast.makeText(context, "محرك البحث الصوتي من Google غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    NeuCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(11.dp),
+        elevation = 2.dp,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Main Top Voice Bar Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Voice / Mic Action Button
+                NeuButton(
+                    onClick = { startVoiceListening() },
+                    modifier = Modifier.height(34.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    isPrimary = true
+                ) {
+                    Icon(
+                        AppIcons.Mic,
+                        contentDescription = "بدء التسجيل الصوتي",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (isListening) "استماع..." else "إدخال صوتي",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Text Display with Wrapping
+                NeuInsetBox(
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 34.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    if (viewModel.lastSpokenVoiceText.isNotBlank()) {
+                        Text(
+                            text = viewModel.lastSpokenVoiceText,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NeuTextPrimary,
+                            softWrap = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            text = "انطق: [الكمية] [الصنف] [السعر/الإجمالي]... (يدعم عدة أصناف بحرف و)",
+                            fontSize = 10.5.sp,
+                            color = NeuTextMuted,
+                            softWrap = true,
+                            maxLines = 2,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                // Actions if there's voice input: Undo and Clear
+                if (viewModel.canUndoVoiceInput) {
+                    NeuCircleButton(
+                        onClick = { viewModel.undoLastVoiceInput() },
+                        size = 30.dp
+                    ) {
+                        Icon(
+                            AppIcons.Undo,
+                            contentDescription = "تراجع عن الإدخال الصوتي",
+                            tint = NeuError,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+
+                if (viewModel.lastSpokenVoiceText.isNotBlank()) {
+                    NeuCircleButton(
+                        onClick = { viewModel.clearVoiceBar() },
+                        size = 28.dp
+                    ) {
+                        Icon(
+                            AppIcons.Clear,
+                            contentDescription = "مسح شريط الصوت",
+                            tint = NeuTextSecondary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+
+            // Parsed Badges Row (Shows recognized items preview chips)
+            if (viewModel.lastParsedVoiceItems.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "المستخرج تلقائياً:",
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeuSuccess
+                    )
+                    viewModel.lastParsedVoiceItems.forEach { item ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = NeuSuccess.copy(alpha = 0.12f),
+                            border = BorderStroke(0.5.dp, NeuSuccess.copy(alpha = 0.35f))
+                        ) {
+                            Text(
+                                text = "${item.description} (${item.quantity} × ${if (item.totalAmount.isNotEmpty()) item.totalAmount else "-"})",
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeuSuccess,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
