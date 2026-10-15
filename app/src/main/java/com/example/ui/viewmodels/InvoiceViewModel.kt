@@ -30,15 +30,42 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+import com.example.ui.util.toCleanDouble
+import com.example.ui.util.formatCleanNumber
+
 data class ReceiptRow(
     val id: String = UUID.randomUUID().toString(),
     var description: String = "",
     var quantityStr: String = "1",
+    var unitPriceStr: String = "",
     var totalAmountStr: String = ""
 ) {
-    val total: Double get() = totalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
-    val hasData: Boolean get() = description.isNotBlank() || totalAmountStr.isNotBlank()
-    val isCompletelyEmpty: Boolean get() = !hasData
+    val quantity: Double
+        get() = quantityStr.toCleanDouble().let { if (it > 0.0) it else 1.0 }
+
+    val total: Double
+        get() {
+            val tot = totalAmountStr.toCleanDouble()
+            if (tot > 0.0) return tot
+            val up = unitPriceStr.toCleanDouble()
+            val q = quantity
+            return if (up > 0.0) up * q else 0.0
+        }
+
+    val unitPrice: Double
+        get() {
+            val up = unitPriceStr.toCleanDouble()
+            if (up > 0.0) return up
+            val tot = totalAmountStr.toCleanDouble()
+            val q = quantity
+            return if (tot > 0.0 && q > 0.0) tot / q else 0.0
+        }
+
+    val hasData: Boolean
+        get() = description.isNotBlank() || totalAmountStr.isNotBlank() || unitPriceStr.isNotBlank()
+
+    val isCompletelyEmpty: Boolean
+        get() = !hasData
 }
 
 class InvoiceViewModel(application: Application) : AndroidViewModel(application) {
@@ -116,10 +143,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
         // Append parsed items
         parsed.forEach { item ->
+            val q = item.quantity.toCleanDouble().let { if (it > 0.0) it else 1.0 }
+            val tot = item.totalAmount.toCleanDouble()
+            val up = if (tot > 0.0 && q > 0.0) tot / q else 0.0
             receiptRows.add(
                 ReceiptRow(
                     description = item.description,
                     quantityStr = item.quantity,
+                    unitPriceStr = if (up > 0.0) formatCleanNumber(up) else "",
                     totalAmountStr = item.totalAmount
                 )
             )
@@ -206,14 +237,69 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateQuantity(index: Int, qty: String) {
         if (index in receiptRows.indices) {
-            receiptRows[index] = receiptRows[index].copy(quantityStr = qty.toEnglishDigits())
+            val row = receiptRows[index]
+            val cleanQty = qty.toEnglishDigits().replace(",", "").replace("٬", "")
+            val q = cleanQty.toCleanDouble().let { if (it > 0.0) it else 1.0 }
+            val up = row.unitPrice
+            val currentTot = row.total
+
+            // Recalculate total if unit price exists, OR scale total when quantity changes
+            val newTotStr = if (up > 0.0) {
+                formatCleanNumber(up * q)
+            } else if (currentTot > 0.0) {
+                val prevQty = row.quantity
+                if (prevQty <= 1.0) {
+                    formatCleanNumber(currentTot * q)
+                } else {
+                    formatCleanNumber(currentTot)
+                }
+            } else {
+                row.totalAmountStr
+            }
+
+            val newUpStr = if (up > 0.0) {
+                row.unitPriceStr
+            } else if (currentTot > 0.0 && q > 0.0) {
+                formatCleanNumber(currentTot / q)
+            } else {
+                row.unitPriceStr
+            }
+
+            receiptRows[index] = row.copy(
+                quantityStr = cleanQty,
+                unitPriceStr = newUpStr,
+                totalAmountStr = newTotStr
+            )
+            checkAutoExpand(index)
+        }
+    }
+
+    fun updateUnitPrice(index: Int, unitPrice: String) {
+        if (index in receiptRows.indices) {
+            val row = receiptRows[index]
+            val cleanUp = unitPrice.toEnglishDigits().replace(",", "").replace("٬", "")
+            val up = cleanUp.toCleanDouble()
+            val q = row.quantity
+            val newTotStr = if (up > 0.0) formatCleanNumber(up * q) else ""
+            receiptRows[index] = row.copy(
+                unitPriceStr = cleanUp,
+                totalAmountStr = newTotStr
+            )
             checkAutoExpand(index)
         }
     }
 
     fun updateTotalAmount(index: Int, total: String) {
         if (index in receiptRows.indices) {
-            receiptRows[index] = receiptRows[index].copy(totalAmountStr = total.toEnglishDigits())
+            val row = receiptRows[index]
+            val cleanTot = total.toEnglishDigits().replace(",", "").replace("٬", "")
+            val tot = cleanTot.toCleanDouble()
+            val q = row.quantity
+            val newUpStr = if (tot > 0.0 && q > 0.0) formatCleanNumber(tot / q) else ""
+            receiptRows[index] = row.copy(
+                totalAmountStr = cleanTot,
+                unitPriceStr = newUpStr
+            )
             checkAutoExpand(index)
         }
     }
@@ -229,7 +315,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun calculateSubtotal(): Double = receiptRows.sumOf { it.total }
-    fun getReceivedAmount(): Double = receivedAmountStr.toEnglishDigits().toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+    fun getReceivedAmount(): Double = receivedAmountStr.toCleanDouble()
     fun calculateGrandTotal(): Double = calculateSubtotal()
 
     fun saveInvoiceToDatabase(onSuccess: (Long) -> Unit = {}) {
@@ -238,13 +324,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 customerName = "عميل نقدي"
             }
             val itemsToSave = receiptRows.filter { it.hasData }.map { row ->
-                val q = row.quantityStr.toDoubleOrNull() ?: 1.0
+                val q = row.quantity
                 val tot = row.total
+                val up = row.unitPrice
                 InvoiceItemEntity(
                     invoiceId = 0,
                     description = row.description.ifBlank { "صنف" },
                     quantity = q,
-                    unitPrice = if (q > 0) tot / q else tot,
+                    unitPrice = if (up > 0.0) up else if (q > 0.0) tot / q else tot,
                     totalAmount = tot
                 )
             }
@@ -318,8 +405,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             receiptRows.add(
                 ReceiptRow(
                     description = item.description,
-                    quantityStr = if (item.quantity > 0) item.quantity.toString() else "1",
-                    totalAmountStr = if (item.totalAmount > 0) item.totalAmount.toString() else ""
+                    quantityStr = if (item.quantity > 0) formatCleanNumber(item.quantity) else "1",
+                    unitPriceStr = if (item.unitPrice > 0) formatCleanNumber(item.unitPrice) else "",
+                    totalAmountStr = if (item.totalAmount > 0) formatCleanNumber(item.totalAmount) else ""
                 )
             )
         }
@@ -443,51 +531,75 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun addCatalogProductToInvoice(name: String, price: Double) {
-        val priceStr = if (price > 0) price.toString() else ""
+        val priceStr = if (price > 0) formatCleanNumber(price) else ""
+        val newRow = ReceiptRow(
+            description = name,
+            quantityStr = "1",
+            unitPriceStr = priceStr,
+            totalAmountStr = priceStr
+        )
         
         var placed = false
         for (i in receiptRows.indices) {
             val row = receiptRows[i]
             if (!row.hasData) {
-                receiptRows[i] = row.copy(description = name, totalAmountStr = priceStr)
+                receiptRows[i] = newRow.copy(id = row.id)
                 placed = true
                 break
             }
         }
 
         if (!placed) {
-            receiptRows.add(ReceiptRow(description = name, totalAmountStr = priceStr))
+            receiptRows.add(newRow)
         }
         _uiEventMessage.value = "تم إدراج الصنف في الفاتورة"
     }
 
-    fun addQuickItem(name: String, quantityStr: String, totalAmountStr: String) {
+    fun addQuickItem(name: String, quantityStr: String, unitPriceStr: String = "", totalAmountStr: String = "") {
         val cleanName = name.trim().ifEmpty { "صنف" }
-        val cleanQty = quantityStr.trim().toEnglishDigits().ifEmpty { "1" }
-        val cleanTot = totalAmountStr.trim().toEnglishDigits().ifEmpty { "0" }
+        val cleanQty = quantityStr.trim().toEnglishDigits().replace(",", "").replace("٬", "").ifEmpty { "1" }
+        val cleanUp = unitPriceStr.trim().toEnglishDigits().replace(",", "").replace("٬", "")
+        val cleanTot = totalAmountStr.trim().toEnglishDigits().replace(",", "").replace("٬", "")
+
+        val q = cleanQty.toCleanDouble().let { if (it > 0.0) it else 1.0 }
+        val up = cleanUp.toCleanDouble()
+        val tot = cleanTot.toCleanDouble()
+
+        val finalUpStr = if (up > 0.0) {
+            formatCleanNumber(up)
+        } else if (tot > 0.0 && q > 0.0) {
+            formatCleanNumber(tot / q)
+        } else {
+            ""
+        }
+
+        val finalTotStr = if (tot > 0.0) {
+            formatCleanNumber(tot)
+        } else if (up > 0.0) {
+            formatCleanNumber(up * q)
+        } else {
+            "0"
+        }
+
+        val newRow = ReceiptRow(
+            description = cleanName,
+            quantityStr = cleanQty,
+            unitPriceStr = finalUpStr,
+            totalAmountStr = finalTotStr
+        )
 
         var placed = false
         for (i in receiptRows.indices) {
             val row = receiptRows[i]
             if (!row.hasData) {
-                receiptRows[i] = row.copy(
-                    description = cleanName,
-                    quantityStr = cleanQty,
-                    totalAmountStr = cleanTot
-                )
+                receiptRows[i] = newRow.copy(id = row.id)
                 placed = true
                 break
             }
         }
 
         if (!placed) {
-            receiptRows.add(
-                ReceiptRow(
-                    description = cleanName,
-                    quantityStr = cleanQty,
-                    totalAmountStr = cleanTot
-                )
-            )
+            receiptRows.add(newRow)
         }
 
         _uiEventMessage.value = "تمت إضافة الصنف $cleanName بنجاح!"

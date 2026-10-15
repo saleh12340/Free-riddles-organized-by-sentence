@@ -12,6 +12,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import com.example.ui.util.toEnglishDigits
+import com.example.ui.util.toCleanDouble
+import com.example.ui.util.formatCleanNumber
 import com.example.ui.util.formatQuantity
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -179,6 +181,7 @@ fun InteractiveReceiptView(
     rows: List<ReceiptRow>,
     onUpdateDescription: (index: Int, desc: String) -> Unit,
     onUpdateQuantity: (index: Int, qty: String) -> Unit,
+    onUpdateUnitPrice: (index: Int, unitPrice: String) -> Unit = { _, _ -> },
     onUpdateTotalAmount: (index: Int, total: String) -> Unit,
     onRemoveRow: (index: Int) -> Unit,
     onAddManualRow: () -> Unit,
@@ -193,7 +196,7 @@ fun InteractiveReceiptView(
 
     val subtotal = rows.sumOf { it.total }
     val grandTotal = subtotal
-    val receivedAmount = receivedAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+    val receivedAmount = receivedAmountStr.toCleanDouble()
     val remainingAmount = (grandTotal - receivedAmount).coerceAtLeast(0.0)
 
     Box(
@@ -392,17 +395,17 @@ fun InteractiveReceiptView(
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                HeaderCell("الإجمالي", 0.95f)
-                HeaderCell("العدد", 0.50f)
-                HeaderCell("التفاصيل", 2.10f)
-                HeaderCell("سعر الواحدة", 0.85f)
                 HeaderCell("م", 0.35f)
+                HeaderCell("التفاصيل", 1.95f)
+                HeaderCell("العدد", 0.55f)
+                HeaderCell("سعر الواحدة", 0.85f)
+                HeaderCell("الإجمالي", 0.95f)
             }
 
             rows.forEachIndexed { index, row ->
-                val qty = (row.quantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                val qty = row.quantity
                 val tot = row.total
-                val unitPrice = if (qty > 0.0 && tot > 0.0) tot / qty else 0.0
+                val unitPrice = row.unitPrice
 
                 Row(
                     modifier = Modifier
@@ -417,45 +420,7 @@ fun InteractiveReceiptView(
                         .background(if (index % 2 == 0) Color.White else Color(0xFFF8FAFC)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 1. الإجمالي
-                    DataCell(
-                        value = row.totalAmountStr.toEnglishDigits(),
-                        onValueChange = { onUpdateTotalAmount(index, it.toEnglishDigits()) },
-                        isEditable = isEditable,
-                        weight = 0.95f,
-                        isNumeric = true,
-                        textColor = ReceiptInkNavy,
-                        fontWeight = FontWeight.Bold,
-                        placeholder = if (isEditable && row.isCompletelyEmpty) "0" else ""
-                    )
-                    // 2. العدد
-                    DataCell(
-                        value = formatQuantity(row.quantityStr),
-                        onValueChange = { onUpdateQuantity(index, it.toEnglishDigits()) },
-                        isEditable = isEditable,
-                        weight = 0.50f,
-                        isNumeric = true
-                    )
-                    // 3. التفاصيل
-                    DataCell(
-                        value = row.description,
-                        onValueChange = { onUpdateDescription(index, it) },
-                        isEditable = isEditable,
-                        weight = 2.10f,
-                        align = TextAlign.Start,
-                        placeholder = if (isEditable && row.isCompletelyEmpty) "أدخل اسم الصنف..." else ""
-                    )
-                    // 4. سعر الواحدة
-                    DataCell(
-                        value = if (unitPrice > 0.0) formatter.format(unitPrice) else "",
-                        onValueChange = {},
-                        isEditable = false,
-                        weight = 0.85f,
-                        isNumeric = true,
-                        textColor = ReceiptInkBlueAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                    // 5. الرقم (م)
+                    // 1. الرقم (م)
                     DataCell(
                         value = (index + 1).toString().toEnglishDigits(),
                         onValueChange = {},
@@ -463,6 +428,45 @@ fun InteractiveReceiptView(
                         weight = 0.35f,
                         textColor = Color.Gray,
                         fontWeight = FontWeight.Medium
+                    )
+                    // 2. التفاصيل
+                    DataCell(
+                        value = row.description,
+                        onValueChange = { onUpdateDescription(index, it) },
+                        isEditable = isEditable,
+                        weight = 1.95f,
+                        align = TextAlign.Start,
+                        placeholder = if (isEditable && row.isCompletelyEmpty) "أدخل اسم الصنف..." else ""
+                    )
+                    // 3. العدد
+                    DataCell(
+                        value = formatQuantity(row.quantityStr),
+                        onValueChange = { onUpdateQuantity(index, it.toEnglishDigits()) },
+                        isEditable = isEditable,
+                        weight = 0.55f,
+                        isNumeric = true
+                    )
+                    // 4. سعر الواحدة (القيمة)
+                    DataCell(
+                        value = if (row.unitPriceStr.isNotBlank()) row.unitPriceStr else if (unitPrice > 0.0) formatCleanNumber(unitPrice) else "",
+                        onValueChange = { onUpdateUnitPrice(index, it.toEnglishDigits()) },
+                        isEditable = isEditable,
+                        weight = 0.85f,
+                        isNumeric = true,
+                        textColor = ReceiptInkBlueAccent,
+                        fontWeight = FontWeight.Bold,
+                        placeholder = if (isEditable && row.isCompletelyEmpty) "0" else ""
+                    )
+                    // 5. الإجمالي
+                    DataCell(
+                        value = if (row.totalAmountStr.isNotBlank()) row.totalAmountStr else if (tot > 0.0) formatCleanNumber(tot) else "",
+                        onValueChange = { onUpdateTotalAmount(index, it.toEnglishDigits()) },
+                        isEditable = isEditable,
+                        weight = 0.95f,
+                        isNumeric = true,
+                        textColor = ReceiptInkNavy,
+                        fontWeight = FontWeight.Bold,
+                        placeholder = if (isEditable && row.isCompletelyEmpty) "0" else ""
                     )
                 }
             }

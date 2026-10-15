@@ -15,6 +15,7 @@ import androidx.core.content.FileProvider
 import com.example.data.local.InvoiceItemEntity
 import com.example.data.local.StoreConfigEntity
 import com.example.ui.viewmodels.ReceiptRow
+import com.example.ui.util.formatCleanNumber
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -103,10 +104,11 @@ object InvoicePdfHelper {
         val rows = items.map { item ->
             ReceiptRow(
                 description = item.description,
-                quantityStr = if (item.quantity > 0) item.quantity.toString() else "1",
-                totalAmountStr = if (item.totalAmount > 0) item.totalAmount.toString() else ""
+                quantityStr = if (item.quantity > 0) formatCleanNumber(item.quantity) else "1",
+                unitPriceStr = if (item.unitPrice > 0) formatCleanNumber(item.unitPrice) else "",
+                totalAmountStr = if (item.totalAmount > 0) formatCleanNumber(item.totalAmount) else ""
             )
-        }.ifEmpty { listOf(ReceiptRow(description = "صنف", quantityStr = "1", totalAmountStr = "0")) }
+        }.ifEmpty { listOf(ReceiptRow(description = "صنف", quantityStr = "1", unitPriceStr = "0", totalAmountStr = "0")) }
 
         return createInvoicePdf(
             context = context,

@@ -8,6 +8,8 @@ import com.example.data.local.CustomerReceiptEntity
 import com.example.data.local.InvoiceItemEntity
 import com.example.data.local.StoreConfigEntity
 import com.example.ui.util.toEnglishDigits
+import com.example.ui.util.toCleanDouble
+import com.example.ui.util.formatCleanNumber
 import com.example.ui.viewmodels.ReceiptRow
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -206,9 +208,9 @@ object ReceiptBitmapHelper {
         val maxDescChars = (26 * (if (scale > 1f) 1.5f else 1.0f)).toInt()
 
         activeRows.forEach { row ->
-            val q = row.quantityStr.toDoubleOrNull() ?: 1.0
+            val q = row.quantity
             val tot = row.total
-            val unitVal = if (q > 0) tot / q else tot
+            val unitVal = if (row.unitPrice > 0.0) row.unitPrice else if (tot > 0.0 && q > 0.0) tot / q else 0.0
 
             // اسم الصنف (Right aligned)
             rowTextPaint.textAlign = Paint.Align.RIGHT
@@ -221,9 +223,10 @@ object ReceiptBitmapHelper {
 
             // الكمية (Center aligned)
             rowBoldPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(row.quantityStr.ifEmpty { "1" }.toEnglishDigits(), xQty, currentY + (12.5f * scale), rowBoldPaint)
+            val qStr = if (q == q.toLong().toDouble()) q.toLong().toString() else q.toString()
+            canvas.drawText(qStr.toEnglishDigits(), xQty, currentY + (12.5f * scale), rowBoldPaint)
 
-            // القيمة (Center aligned)
+            // القيمة (سعر الواحدة) (Center aligned)
             rowTextPaint.textAlign = Paint.Align.CENTER
             val priceStr = if (unitVal > 0.0) formatter.format(unitVal).toEnglishDigits() else "-"
             canvas.drawText(priceStr, xPrice, currentY + (12.5f * scale), rowTextPaint)
@@ -308,10 +311,11 @@ object ReceiptBitmapHelper {
         val rows = items.map { item ->
             ReceiptRow(
                 description = item.description,
-                quantityStr = if (item.quantity > 0) item.quantity.toString() else "1",
-                totalAmountStr = if (item.totalAmount > 0) item.totalAmount.toString() else ""
+                quantityStr = if (item.quantity > 0) formatCleanNumber(item.quantity) else "1",
+                unitPriceStr = if (item.unitPrice > 0) formatCleanNumber(item.unitPrice) else "",
+                totalAmountStr = if (item.totalAmount > 0) formatCleanNumber(item.totalAmount) else ""
             )
-        }.ifEmpty { listOf(ReceiptRow(description = "صنف", quantityStr = "1", totalAmountStr = "0")) }
+        }.ifEmpty { listOf(ReceiptRow(description = "صنف", quantityStr = "1", unitPriceStr = "0", totalAmountStr = "0")) }
 
         return createReceiptBitmap(
             context = context,

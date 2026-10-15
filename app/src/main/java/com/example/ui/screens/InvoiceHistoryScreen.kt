@@ -498,6 +498,7 @@ fun InvoiceHistoryScreen(
                         com.example.ui.viewmodels.ReceiptRow(
                             description = itm.description,
                             quantityStr = if (itm.quantity > 0) itm.quantity.toString() else "1",
+                            unitPriceStr = if (itm.unitPrice > 0) itm.unitPrice.toString() else "",
                             totalAmountStr = if (itm.totalAmount > 0) itm.totalAmount.toString() else ""
                         )
                     }.ifEmpty { listOf(com.example.ui.viewmodels.ReceiptRow()) }
