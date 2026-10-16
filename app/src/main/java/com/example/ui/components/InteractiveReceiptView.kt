@@ -11,6 +11,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import com.example.ui.util.toEnglishDigits
 import com.example.ui.util.toCleanDouble
 import com.example.ui.util.formatCleanNumber
@@ -420,15 +422,36 @@ fun InteractiveReceiptView(
                         .background(if (index % 2 == 0) Color.White else Color(0xFFF8FAFC)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 1. الرقم (م)
-                    DataCell(
-                        value = (index + 1).toString().toEnglishDigits(),
-                        onValueChange = {},
-                        isEditable = false,
-                        weight = 0.35f,
-                        textColor = Color.Gray,
-                        fontWeight = FontWeight.Medium
-                    )
+                    // 1. الرقم (م) أو زر الحذف
+                    Box(
+                        modifier = Modifier
+                            .weight(0.35f)
+                            .heightIn(min = 28.dp)
+                            .padding(horizontal = 0.5.dp, vertical = 2.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(if (isEditable) Color(0xFFFEF2F2) else Color(0xFFF1F5F9))
+                            .border(0.5.dp, if (isEditable) Color(0xFFFECACA) else Color(0xFFCBD5E1), RoundedCornerShape(5.dp))
+                            .clickable(enabled = isEditable) {
+                                onRemoveRow(index)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isEditable) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "حذف الصنف",
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        } else {
+                            Text(
+                                text = (index + 1).toString().toEnglishDigits(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                     // 2. التفاصيل
                     DataCell(
                         value = row.description,
@@ -468,6 +491,32 @@ fun InteractiveReceiptView(
                         fontWeight = FontWeight.Bold,
                         placeholder = if (isEditable && row.isCompletelyEmpty) "0" else ""
                     )
+                }
+            }
+            if (isEditable) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onAddManualRow,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "إضافة صنف جديد",
+                            tint = ReceiptInkBlueAccent,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "+ إضافة صنف",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ReceiptInkBlueAccent
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(2.dp))

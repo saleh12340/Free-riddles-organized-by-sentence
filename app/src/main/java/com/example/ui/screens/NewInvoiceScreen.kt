@@ -1008,10 +1008,9 @@ fun VoiceInvoiceInputBar(
     ) { result ->
         isListening = false
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            val spokenMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spokenText = spokenMatches?.firstOrNull() ?: ""
-            if (spokenText.isNotBlank()) {
-                viewModel.processVoiceInput(spokenText)
+            val spokenMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS) ?: emptyList()
+            if (spokenMatches.isNotEmpty()) {
+                viewModel.processVoiceInputCandidates(spokenMatches)
             }
         }
     }
@@ -1024,14 +1023,16 @@ fun VoiceInvoiceInputBar(
                 isListening = true
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-SA")
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-SA")
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث لنطق الصنف (مثال: 2 كرتون عصير 4000 أو 15000 سكر 5)")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar")
+                    putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("ar-SA", "ar-YE", "ar-EG", "ar"))
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "انطق: [القيمة] [الصنف] [الكمية] (مثال: 4000 كرتون عصير 2 أو 1000 تونة 2)")
                 }
                 speechLauncher.launch(intent)
             } catch (e: Exception) {
                 isListening = false
-                Toast.makeText(context, "محرك البحث الصوتي من Google غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "محرك البحث الصوتي غير متوفر على هذا الجهاز، يمكنك الكتابة في الشريط مباشرة", Toast.LENGTH_SHORT).show()
             }
         } else {
             Toast.makeText(context, "يرجى منح إذن المايكروفون لاستخدام الإدخال الصوتي", Toast.LENGTH_SHORT).show()
@@ -1049,14 +1050,16 @@ fun VoiceInvoiceInputBar(
                 isListening = true
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-SA")
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-SA")
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "تحدث لنطق الصنف (مثال: 2 كرتون عصير 4000 أو 15000 سكر 5)")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar")
+                    putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("ar-SA", "ar-YE", "ar-EG", "ar"))
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "انطق: [القيمة] [الصنف] [الكمية] (مثال: 4000 كرتون عصير 2 أو 1000 تونة 2)")
                 }
                 speechLauncher.launch(intent)
             } catch (e: Exception) {
                 isListening = false
-                Toast.makeText(context, "محرك البحث الصوتي من Google غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "محرك البحث الصوتي غير متوفر على هذا الجهاز، يمكنك الكتابة في الشريط مباشرة", Toast.LENGTH_SHORT).show()
             }
         } else {
             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -1082,54 +1085,89 @@ fun VoiceInvoiceInputBar(
                 // Voice / Mic Action Button
                 NeuButton(
                     onClick = { startVoiceListening() },
-                    modifier = Modifier.height(34.dp),
+                    modifier = Modifier.height(36.dp),
                     shape = RoundedCornerShape(8.dp),
-                    isPrimary = true
+                    isPrimary = !isListening
                 ) {
                     Icon(
                         AppIcons.Mic,
                         contentDescription = "بدء التسجيل الصوتي",
-                        tint = Color.White,
+                        tint = if (isListening) NeuError else Color.White,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (isListening) "استماع..." else "إدخال صوتي",
-                        color = Color.White,
-                        fontSize = 11.sp,
+                        text = if (isListening) "استماع..." else "صوتي",
+                        color = if (isListening) NeuError else Color.White,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                // Text Display with Wrapping
+                // Interactive / Editable Text Container with Wrapping
                 NeuInsetBox(
                     modifier = Modifier
                         .weight(1f)
-                        .defaultMinSize(minHeight = 34.dp),
+                        .defaultMinSize(minHeight = 36.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    if (viewModel.lastSpokenVoiceText.isNotBlank()) {
-                        Text(
-                            text = viewModel.lastSpokenVoiceText,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = NeuTextPrimary,
-                            softWrap = true,
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        BasicTextField(
+                            value = viewModel.voiceInputText,
+                            onValueChange = { viewModel.updateVoiceInputText(it) },
+                            textStyle = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = NeuTextPrimary,
+                                textAlign = TextAlign.Start
+                            ),
+                            cursorBrush = SolidColor(NeuAccentBlue),
+                            singleLine = false,
+                            maxLines = 3,
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done,
+                                keyboardType = KeyboardType.Text
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { viewModel.submitVoiceBarText() }
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         )
-                    } else {
-                        Text(
-                            text = "انطق: [الكمية] [الصنف] [السعر/الإجمالي]... (يدعم عدة أصناف بحرف و)",
-                            fontSize = 10.5.sp,
-                            color = NeuTextMuted,
-                            softWrap = true,
-                            maxLines = 2,
-                            modifier = Modifier.fillMaxWidth()
+
+                        if (viewModel.voiceInputText.isBlank()) {
+                            Text(
+                                text = "انطق: [القيمة] [الصنف] [الكمية] (مثال: 4000 كرتون عصير 2)",
+                                fontSize = 10.5.sp,
+                                color = NeuTextMuted,
+                                softWrap = true,
+                                maxLines = 2,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Manual submit / parse button if user typed or edited text
+                if (viewModel.voiceInputText.isNotBlank()) {
+                    NeuCircleButton(
+                        onClick = { viewModel.submitVoiceBarText() },
+                        size = 32.dp
+                    ) {
+                        Icon(
+                            AppIcons.Add,
+                            contentDescription = "تحليل وإضافة الفاتورة",
+                            tint = NeuSuccess,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
-                // Actions if there's voice input: Undo and Clear
+                // Actions: Undo and Clear
                 if (viewModel.canUndoVoiceInput) {
                     NeuCircleButton(
                         onClick = { viewModel.undoLastVoiceInput() },
@@ -1144,7 +1182,7 @@ fun VoiceInvoiceInputBar(
                     }
                 }
 
-                if (viewModel.lastSpokenVoiceText.isNotBlank()) {
+                if (viewModel.voiceInputText.isNotBlank() || viewModel.lastSpokenVoiceText.isNotBlank()) {
                     NeuCircleButton(
                         onClick = { viewModel.clearVoiceBar() },
                         size = 28.dp
@@ -1167,7 +1205,7 @@ fun VoiceInvoiceInputBar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "المستخرج تلقائياً:",
+                        text = "تم استخراجه وإدراجه:",
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeuSuccess
@@ -1179,7 +1217,7 @@ fun VoiceInvoiceInputBar(
                             border = BorderStroke(0.5.dp, NeuSuccess.copy(alpha = 0.35f))
                         ) {
                             Text(
-                                text = "${item.description} (${item.quantity} × ${if (item.totalAmount.isNotEmpty()) item.totalAmount else "-"})",
+                                text = "${item.description} (العدد: ${item.quantity} × ${if (item.totalAmount.isNotEmpty()) item.totalAmount else "-"})",
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeuSuccess,

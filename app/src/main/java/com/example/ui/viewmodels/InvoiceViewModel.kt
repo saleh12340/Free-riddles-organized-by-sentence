@@ -113,6 +113,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     val receiptRows = mutableStateListOf<ReceiptRow>()
 
     // Voice Input State
+    var voiceInputText by mutableStateOf("")
     var lastSpokenVoiceText by mutableStateOf("")
         private set
     var lastParsedVoiceItems by mutableStateOf<List<ParsedVoiceItem>>(emptyList())
@@ -121,17 +122,41 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     var canUndoVoiceInput by mutableStateOf(false)
         private set
 
-    fun processVoiceInput(spokenText: String): Int {
-        val clean = spokenText.trim()
-        if (clean.isBlank()) return 0
-        lastSpokenVoiceText = clean
-        val parsed = VoiceInvoiceParser.parseVoiceInput(clean)
-        if (parsed.isEmpty()) {
-            _uiEventMessage.value = "لم يتم التعرف على أي صنف من الصوت المنطوق"
-            return 0
-        }
+    fun updateVoiceInputText(text: String) {
+        voiceInputText = text
+    }
 
-        // Save snapshot for 1-click Undo
+    fun submitVoiceBarText(): Int {
+        val clean = voiceInputText.trim()
+        if (clean.isBlank()) return 0
+        return processVoiceInput(clean)
+    }
+
+    fun processVoiceInputCandidates(candidates: List<String>): Int {
+        for (candidate in candidates) {
+            val clean = candidate.trim()
+            if (clean.isBlank()) continue
+            val parsed = VoiceInvoiceParser.parseVoiceInput(clean)
+            if (parsed.isNotEmpty()) {
+                return applyParsedVoiceItems(clean, parsed)
+            }
+        }
+        val first = candidates.firstOrNull()?.trim() ?: ""
+        if (first.isNotBlank()) {
+            voiceInputText = first
+            lastSpokenVoiceText = first
+        }
+        _uiEventMessage.value = "لم يتم التعرف على تفاصيل الصنف من الصوت، يرجى التحدث بوضوح (مثال: 4000 كرتون عصير 2 أو 1000 تونة 2)"
+        return 0
+    }
+
+    fun processVoiceInput(spokenText: String): Int {
+        return processVoiceInputCandidates(listOf(spokenText))
+    }
+
+    private fun applyParsedVoiceItems(spokenText: String, parsed: List<ParsedVoiceItem>): Int {
+        voiceInputText = spokenText
+        lastSpokenVoiceText = spokenText
         previousReceiptRowsSnapshot = receiptRows.map { it.copy() }
         canUndoVoiceInput = true
         lastParsedVoiceItems = parsed
@@ -141,17 +166,34 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             receiptRows.removeAt(receiptRows.lastIndex)
         }
 
-        // Append parsed items
         parsed.forEach { item ->
             val q = item.quantity.toCleanDouble().let { if (it > 0.0) it else 1.0 }
-            val tot = item.totalAmount.toCleanDouble()
-            val up = if (tot > 0.0 && q > 0.0) tot / q else 0.0
+            var up = item.unitPrice.toCleanDouble()
+            var tot = item.totalAmount.toCleanDouble()
+
+            // If price was missing, check catalog for product match
+            if (tot == 0.0 && up == 0.0) {
+                val match = allProducts.value.find { prod ->
+                    prod.name.trim().equals(item.description.trim(), ignoreCase = true) ||
+                    item.description.contains(prod.name.trim(), ignoreCase = true) ||
+                    prod.name.contains(item.description.trim(), ignoreCase = true)
+                }
+                if (match != null && match.defaultUnitPrice > 0.0) {
+                    up = match.defaultUnitPrice
+                    tot = up * q
+                }
+            } else if (tot > 0.0 && up == 0.0 && q > 0.0) {
+                up = tot / q
+            } else if (up > 0.0 && tot == 0.0) {
+                tot = up * q
+            }
+
             receiptRows.add(
                 ReceiptRow(
                     description = item.description,
-                    quantityStr = item.quantity,
+                    quantityStr = formatCleanNumber(q),
                     unitPriceStr = if (up > 0.0) formatCleanNumber(up) else "",
-                    totalAmountStr = item.totalAmount
+                    totalAmountStr = if (tot > 0.0) formatCleanNumber(tot) else ""
                 )
             )
         }
@@ -159,7 +201,15 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         // Always keep an empty trailing row for quick manual entry
         receiptRows.add(ReceiptRow())
 
-        _uiEventMessage.value = "تمت إضافة ${parsed.size} صنف بالصوت تلقائياً إلى الفاتورة"
+        if (parsed.size == 1) {
+            val single = parsed[0]
+            val desc = single.description
+            val qty = single.quantity
+            val tot = single.totalAmount.ifBlank { "0" }
+            _uiEventMessage.value = "تمت الإضافة: $desc (العدد: $qty | الإجمالي: $tot ر.ي)"
+        } else {
+            _uiEventMessage.value = "تمت إضافة ${parsed.size} أصناف بالصوت بنجاح!"
+        }
         return parsed.size
     }
 
@@ -174,6 +224,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun clearVoiceBar() {
+        voiceInputText = ""
         lastSpokenVoiceText = ""
         lastParsedVoiceItems = emptyList()
         canUndoVoiceInput = false
@@ -309,8 +360,12 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun removeRow(index: Int) {
-        if (receiptRows.size > 1 && index in receiptRows.indices) {
-            receiptRows.removeAt(index)
+        if (index in receiptRows.indices) {
+            if (receiptRows.size > 1) {
+                receiptRows.removeAt(index)
+            } else {
+                receiptRows[0] = ReceiptRow()
+            }
         }
     }
 

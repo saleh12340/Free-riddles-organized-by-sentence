@@ -680,5 +680,52 @@ object AppIcons {
             }
         }.build()
     }
+
+    val Add: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Add",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(19f, 13f)
+                horizontalLineToRelative(-6f)
+                verticalLineToRelative(6f)
+                horizontalLineToRelative(-2f)
+                verticalLineToRelative(-6f)
+                horizontalLineTo(5f)
+                verticalLineToRelative(-2f)
+                horizontalLineToRelative(6f)
+                verticalLineTo(5f)
+                horizontalLineToRelative(2f)
+                verticalLineToRelative(6f)
+                horizontalLineToRelative(6f)
+                verticalLineToRelative(2f)
+                close()
+            }
+        }.build()
+    }
+
+    val Check: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Check",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(9f, 16.17f)
+                lineTo(4.83f, 12f)
+                lineToRelative(-1.42f, 1.41f)
+                lineTo(9f, 19f)
+                lineTo(21f, 7f)
+                lineToRelative(-1.41f, -1.41f)
+                close()
+            }
+        }.build()
+    }
 }
 
