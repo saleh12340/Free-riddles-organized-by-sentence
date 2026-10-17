@@ -95,14 +95,14 @@ private fun HomeDashboardScreen(
                     Icon(AppIcons.Category, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(config.storeNameArabic.ifBlank { "بقالة العزي" }, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text((config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" }, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     Text("إدارة المبيعات والفواتير", fontSize = 13.sp, color = Color(0xFFB8C8DC))
                 }
             }
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DashboardMetric("مبيعات اليوم", money.format(todaySales), config.currencySymbol, Modifier.weight(1f))
-                DashboardMetric("الواصل اليوم", money.format(todayReceived), config.currencySymbol, Modifier.weight(1f))
+                DashboardMetric("مبيعات اليوم", money.format(todaySales), config?.currencySymbol ?: "ر.ي", Modifier.weight(1f))
+                DashboardMetric("الواصل اليوم", money.format(todayReceived), config?.currencySymbol ?: "ر.ي", Modifier.weight(1f))
             }
         }
 
@@ -235,7 +235,8 @@ private fun DashboardAction(
     }
 }
 
-\nclass MainActivity : ComponentActivity() {
+
+class MainActivity : ComponentActivity() {
 
     private val viewModel: InvoiceViewModel by viewModels()
 
@@ -355,7 +356,15 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                 .padding(innerPadding)
         ) {
             when (currentTab) {
-                NavigationScreen.HOME -> HomeDashboardScreen(\n                    viewModel = viewModel,\n                    onNewInvoice = { currentTab = NavigationScreen.NEW_INVOICE },\n                    onCustomers = { currentTab = NavigationScreen.CUSTOMERS },\n                    onHistory = { currentTab = NavigationScreen.HISTORY },\n                    onProducts = { currentTab = NavigationScreen.PRODUCTS },\n                    onPrinter = { currentTab = NavigationScreen.PRINTER },\n                    onSettings = { currentTab = NavigationScreen.SETTINGS }\n                )\n                NavigationScreen.NEW_INVOICE -> NewInvoiceScreen(
+                NavigationScreen.HOME -> HomeDashboardScreen(
+                    viewModel = viewModel,
+                    onNewInvoice = { currentTab = NavigationScreen.NEW_INVOICE },
+                    onCustomers = { currentTab = NavigationScreen.CUSTOMERS },
+                    onHistory = { currentTab = NavigationScreen.HISTORY },
+                    onProducts = { currentTab = NavigationScreen.PRODUCTS },
+                    onPrinter = { currentTab = NavigationScreen.PRINTER },
+                    onSettings = { currentTab = NavigationScreen.SETTINGS }
+                )\n                NavigationScreen.NEW_INVOICE -> NewInvoiceScreen(
                     viewModel = viewModel,
                     onNavigateToPrinterSetup = { currentTab = NavigationScreen.PRINTER }
                 )
