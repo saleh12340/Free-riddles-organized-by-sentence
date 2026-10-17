@@ -10,7 +10,7 @@ data class StoreConfigEntity(
     @PrimaryKey val id: Int = 1,
     val storeNameArabic: String = "بقالة العزي",
     val storeNameEnglish: String = "Al-Ezzi Grocery",
-    val storeSubtitle: String = "مواد غذائية واست هلاكية",
+    val storeSubtitle: String = "مواد غذائية واستهلاكية",
     val logoText: String = "العزي",
     val address: String = "العنوان: صنعاء",
     val phone1: String = "772437314",
@@ -24,7 +24,14 @@ data class StoreConfigEntity(
         get() = if (printerPaperWidth == 80) 576 else 384
 }
 
-@Entity(tableName = "invoices")
+@Entity(
+    tableName = "invoices",
+    indices = [
+        Index("customerName"),
+        Index("dateString"),
+        Index("createdAtTimestamp")
+    ]
+)
 data class InvoiceEntity(
     @PrimaryKey(autoGenerate = true) val invoiceId: Long = 0,
     val invoiceNumber: Int,
@@ -37,6 +44,8 @@ data class InvoiceEntity(
     val remainingAmount: Double = 0.0,
     val grandTotal: Double,
     val notes: String = "",
+    val currency: String = "YER",
+    val qrCodeData: String = "",
     val createdAtTimestamp: Long = System.currentTimeMillis()
 )
 
@@ -61,15 +70,26 @@ data class InvoiceItemEntity(
     val totalAmount: Double
 )
 
-@Entity(tableName = "products_catalog")
+@Entity(
+    tableName = "products_catalog",
+    indices = [Index("name")]
+)
 data class ProductCatalogEntity(
     @PrimaryKey(autoGenerate = true) val productId: Long = 0,
     val name: String,
     val defaultUnitPrice: Double = 0.0,
-    val category: String = "عام"
+    val category: String = "عام",
+    val stockQuantity: Double = 0.0,
+    val minStockAlert: Double = 5.0
 )
 
-@Entity(tableName = "customer_receipts")
+@Entity(
+    tableName = "customer_receipts",
+    indices = [
+        Index("customerName"),
+        Index("dateString")
+    ]
+)
 data class CustomerReceiptEntity(
     @PrimaryKey(autoGenerate = true) val receiptId: Long = 0,
     val customerName: String,
@@ -79,4 +99,3 @@ data class CustomerReceiptEntity(
     val notes: String = "",
     val createdAtTimestamp: Long = System.currentTimeMillis()
 )
-

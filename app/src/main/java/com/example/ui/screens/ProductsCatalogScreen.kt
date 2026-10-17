@@ -43,6 +43,8 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
     var productNameInput by remember { mutableStateOf("") }
     var productPriceInput by remember { mutableStateOf("") }
     var productCategoryInput by remember { mutableStateOf("عام") }
+    var productStockInput by remember { mutableStateOf("") }
+    var productMinStockInput by remember { mutableStateOf("5") }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategoryFilter by remember { mutableStateOf("الكل") }
 
@@ -206,10 +208,12 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                                     productNameInput = product.name
                                     productPriceInput = if (product.defaultUnitPrice > 0) product.defaultUnitPrice.toString() else ""
                                     productCategoryInput = product.category
+                                    productStockInput = if (product.stockQuantity > 0) product.stockQuantity.toString() else ""
+                                    productMinStockInput = product.minStockAlert.toString()
                                     showAddDialog = true
                                 },
                             shape = RoundedCornerShape(11.dp),
-                            elevation = 3.dp,
+                            elevation = 2.dp,
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Row(
@@ -243,12 +247,33 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                                             maxLines = 1,
                                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        NeuPillBadge(
-                                            text = product.category,
-                                            fontSize = 9.sp,
-                                            textColor = NeuTextSecondary
-                                        )
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            NeuPillBadge(
+                                                text = product.category,
+                                                fontSize = 9.sp,
+                                                textColor = NeuTextSecondary
+                                            )
+                                            if (product.stockQuantity > 0.0) {
+                                                val isLow = product.stockQuantity <= product.minStockAlert
+                                                NeuPillBadge(
+                                                    text = "المخزون: ${formatter.format(product.stockQuantity)}",
+                                                    fontSize = 9.sp,
+                                                    textColor = if (isLow) Color(0xFFD97706) else Color(0xFF059669),
+                                                    backgroundColor = if (isLow) Color(0xFFFEF3C7) else Color(0xFFD1FAE5)
+                                                )
+                                            } else {
+                                                NeuPillBadge(
+                                                    text = "نفد المخزون",
+                                                    fontSize = 8.5.sp,
+                                                    textColor = Color(0xFFDC2626),
+                                                    backgroundColor = Color(0xFFFEE2E2)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
 
@@ -320,14 +345,21 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                     onClick = {
                         val name = productNameInput.trim()
                         val price = productPriceInput.toDoubleOrNull() ?: 0.0
+                        val stock = productStockInput.toDoubleOrNull() ?: 0.0
+                        val minStock = productMinStockInput.toDoubleOrNull() ?: 5.0
                         if (name.isNotEmpty()) {
-                            if (editingProduct != null) {
-                                viewModel.addCatalogProduct(name, price, productCategoryInput)
-                            } else {
-                                viewModel.addCatalogProduct(name, price, productCategoryInput)
-                            }
+                            viewModel.addCatalogProduct(
+                                name = name,
+                                price = price,
+                                category = productCategoryInput,
+                                stockQuantity = stock,
+                                minStockAlert = minStock,
+                                id = editingProduct?.productId ?: 0
+                            )
                             productNameInput = ""
                             productPriceInput = ""
+                            productStockInput = ""
+                            productMinStockInput = "5"
                             editingProduct = null
                             showAddDialog = false
                         }
@@ -371,22 +403,48 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                         )
                     }
 
-                    Text("سعر البيع الافتراضي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
-                    NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
-                        BasicTextField(
-                            value = productPriceInput,
-                            onValueChange = { productPriceInput = it.toEnglishDigits() },
-                            singleLine = true,
-                            textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
-                            cursorBrush = SolidColor(NeuAccentBlue),
-                            modifier = Modifier.fillMaxWidth(),
-                            decorationBox = { inner ->
-                                if (productPriceInput.isEmpty()) {
-                                    Text("0.0", color = NeuTextMuted, fontSize = 13.5.sp)
-                                }
-                                inner()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("سعر البيع:", fontSize = 11.5.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                            NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                                BasicTextField(
+                                    value = productPriceInput,
+                                    onValueChange = { productPriceInput = it.toEnglishDigits() },
+                                    singleLine = true,
+                                    textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                                    cursorBrush = SolidColor(NeuAccentBlue),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { inner ->
+                                        if (productPriceInput.isEmpty()) {
+                                            Text("0.0", color = NeuTextMuted, fontSize = 12.sp)
+                                        }
+                                        inner()
+                                    }
+                                )
                             }
-                        )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("المخزون المتوفر:", fontSize = 11.5.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                            NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                                BasicTextField(
+                                    value = productStockInput,
+                                    onValueChange = { productStockInput = it.toEnglishDigits() },
+                                    singleLine = true,
+                                    textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                                    cursorBrush = SolidColor(NeuAccentBlue),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { inner ->
+                                        if (productStockInput.isEmpty()) {
+                                            Text("0", color = NeuTextMuted, fontSize = 12.sp)
+                                        }
+                                        inner()
+                                    }
+                                )
+                            }
+                        }
                     }
 
                     Text("فئة / قسم الصنف:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)

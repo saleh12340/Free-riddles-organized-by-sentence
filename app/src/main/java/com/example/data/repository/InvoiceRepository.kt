@@ -57,7 +57,7 @@ class InvoiceRepository(private val db: AppDatabase) {
             )
         }
 
-        // Auto-save any entered item into the products catalog
+        // Auto-save any entered item into the products catalog & deduct inventory
         for (item in items) {
             val cleanName = item.description.trim()
             if (cleanName.isNotBlank()) {
@@ -68,12 +68,20 @@ class InvoiceRepository(private val db: AppDatabase) {
                         ProductCatalogEntity(
                             name = cleanName,
                             defaultUnitPrice = unitPrice,
-                            category = "عام"
+                            category = "عام",
+                            stockQuantity = 0.0,
+                            minStockAlert = 5.0
                         )
                     )
-                } else if (unitPrice > 0) {
+                } else {
+                    val updatedStock = if (existing.stockQuantity > 0.0) {
+                        maxOf(0.0, existing.stockQuantity - item.quantity)
+                    } else existing.stockQuantity
                     db.productDao().insertProduct(
-                        existing.copy(defaultUnitPrice = unitPrice)
+                        existing.copy(
+                            defaultUnitPrice = if (unitPrice > 0) unitPrice else existing.defaultUnitPrice,
+                            stockQuantity = updatedStock
+                        )
                     )
                 }
             }
@@ -91,7 +99,9 @@ class InvoiceRepository(private val db: AppDatabase) {
                     ProductCatalogEntity(
                         name = cleanName,
                         defaultUnitPrice = price,
-                        category = "عام"
+                        category = "عام",
+                        stockQuantity = 0.0,
+                        minStockAlert = 5.0
                     )
                 )
             }

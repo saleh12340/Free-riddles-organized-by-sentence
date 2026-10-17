@@ -7,6 +7,8 @@ import java.util.Locale
 sealed class VoiceCommand {
     data class Add(val items: List<ParsedVoiceItem>) : VoiceCommand()
     data class DeleteItem(val query: String, val index: Int? = null) : VoiceCommand()
+    data class AddCustomer(val customerName: String) : VoiceCommand()
+    data class AddProduct(val productName: String, val price: Double) : VoiceCommand()
     object ClearInvoice : VoiceCommand()
     object Unknown : VoiceCommand()
 }
@@ -30,28 +32,89 @@ object VoiceInvoiceParser {
             return VoiceCommand.ClearInvoice
         }
 
-        // 2. Check deletion / cancellation of item
-        val deletePrefixes = listOf("احذف", "حذف", "الغاء", "إلغاء", "مسح", "شيل", "ارفع")
+        // 2. Check Add Customer: e.g. "أضف عميل اسمه أحمد سالم" or "اضف عميل محمد"
+        val customerPrefixes = listOf("أضف عميل", "اضف عميل", "عميل جديد", "سجل عميل", "العميل")
+        for (cp in customerPrefixes) {
+            if (lower.startsWith(cp)) {
+                var cName = cleanText.substring(cp.length).trim()
+                if (cName.startsWith("اسمه")) cName = cName.substring(4).trim()
+                if (cName.startsWith("اسم:")) cName = cName.substring(4).trim()
+                if (cName.isNotBlank()) {
+                    return VoiceCommand.AddCustomer(cName)
+                }
+            }
+        }
+
+        // 3. Check Add Product: e.g. "أضف صنف قلم بسعر 500" or "اضف صنف حليب 400"
+        val productPrefixes = listOf("أضف صنف", "اضف صنف", "صنف جديد", "سجل صنف")
+        for (pp in productPrefixes) {
+            if (lower.startsWith(pp)) {
+                val remainder = cleanText.substring(pp.length).trim()
+                // extract price if mentioned: "بسعر 500" or number at the end
+                val words = remainder.split("\\s+".toRegex())
+                var price = 0.0
+                val nameWords = mutableListOf<String>()
+                for (w in words) {
+                    val num = w.toEnglishDigits().toDoubleOrNull()
+                    if (num != null && num > 0) {
+                        price = num
+                    } else if (w != "بسعر" && w != "سعر" && w != "ريال" && w != "ر.ي") {
+                        nameWords.add(w)
+                    }
+                }
+                val pName = nameWords.joinToString(" ").trim()
+                if (pName.isNotBlank()) {
+                    return VoiceCommand.AddProduct(pName, price)
+                }
+            }
+        }
+
+        // 4. Check deletion / cancellation of item
+        val deletePrefixes = listOf("احذف", "حذف", "الغاء", "إلغاء", "مسح", "شيل", "ارفع", "امسح", "كنسل")
         for (prefix in deletePrefixes) {
             if (lower.startsWith(prefix) || lower.contains(" $prefix ")) {
-                val remainder = lower.replace(prefix, "").trim()
-                val words = remainder.split("\\s+".toRegex())
+                var remainder = lower.replace(prefix, "").trim()
+                
+                // Ordinal dictionary
+                val ordinalMap = mapOf(
+                    "الاول" to 0, "الأول" to 0, "اول" to 0, "أول" to 0,
+                    "الثاني" to 1, "التاني" to 1, "ثاني" to 1, "تاني" to 1,
+                    "الثالث" to 2, "التالت" to 2, "ثالث" to 2, "تالت" to 2,
+                    "الرابع" to 3, "رابع" to 3,
+                    "الخامس" to 4, "خامس" to 4,
+                    "السادس" to 5, "سادس" to 5,
+                    "السابع" to 6, "سابع" to 6,
+                    "الثامن" to 7, "ثامن" to 7,
+                    "التاسع" to 8, "تاسع" to 8,
+                    "العاشر" to 9, "عاشر" to 9,
+                    "الاخير" to -1, "الأخير" to -1, "اخر" to -1, "آخر" to -1
+                )
+
                 var targetIndex: Int? = null
-                var query = remainder
+                val words = remainder.split("\\s+".toRegex()).filter { it.isNotBlank() }
 
                 for (w in words) {
-                    val num = w.toEnglishDigits().toDoubleOrNull() ?: unitsMap[w]
+                    if (ordinalMap.containsKey(w)) {
+                        targetIndex = ordinalMap[w]
+                        break
+                    }
+                    val num = w.toEnglishDigits().toDoubleOrNull()
                     if (num != null && num in 1.0..50.0) {
                         targetIndex = num.toInt() - 1
-                        query = remainder.replace(w, "").trim()
                         break
                     }
                 }
+
+                // Strip filler words to get clean item search query
+                val fillerWords = setOf("صنف", "الصنف", "عنصر", "العنصر", "واحد", "الواحد", "سطر", "السطر", "رقم", "من", "الفاتورة", "الفاتوره")
+                val cleanQueryWords = words.filter { !fillerWords.contains(it) && !ordinalMap.containsKey(it) && it.toEnglishDigits().toDoubleOrNull() == null }
+                val query = cleanQueryWords.joinToString(" ").trim()
+
                 return VoiceCommand.DeleteItem(query = query, index = targetIndex)
             }
         }
 
-        // 3. Otherwise parse as add items
+        // 5. Otherwise parse as add invoice items
         val items = parseVoiceInput(cleanText)
         if (items.isNotEmpty()) {
             return VoiceCommand.Add(items)

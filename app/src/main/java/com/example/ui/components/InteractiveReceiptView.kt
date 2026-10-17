@@ -425,30 +425,30 @@ fun InteractiveReceiptView(
                     // 1. الرقم (م) أو زر الحذف
                     Box(
                         modifier = Modifier
-                            .weight(0.35f)
+                            .weight(0.38f)
                             .heightIn(min = 28.dp)
                             .padding(horizontal = 0.5.dp, vertical = 2.dp)
                             .clip(RoundedCornerShape(5.dp))
-                            .background(if (isEditable) Color(0xFFFEF2F2) else Color(0xFFF1F5F9))
-                            .border(0.5.dp, if (isEditable) Color(0xFFFECACA) else Color(0xFFCBD5E1), RoundedCornerShape(5.dp))
+                            .background(if (isEditable && row.hasData) Color(0xFFFEF2F2) else Color(0xFFF1F5F9))
+                            .border(0.5.dp, if (isEditable && row.hasData) Color(0xFFFECACA) else Color(0xFFCBD5E1), RoundedCornerShape(5.dp))
                             .clickable(enabled = isEditable) {
                                 onRemoveRow(index)
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isEditable) {
+                        if (isEditable && row.hasData) {
                             Icon(
-                                Icons.Default.Close,
-                                contentDescription = "حذف الصنف",
-                                tint = Color(0xFFEF4444),
-                                modifier = Modifier.size(14.dp)
+                                Icons.Default.Delete,
+                                contentDescription = "حذف أو إلغاء الصنف",
+                                tint = Color(0xFFDC2626),
+                                modifier = Modifier.size(15.dp)
                             )
                         } else {
                             Text(
                                 text = (index + 1).toString().toEnglishDigits(),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Gray
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF64748B)
                             )
                         }
                     }

@@ -256,7 +256,7 @@ fun NewInvoiceScreen(
                             Text(
                                 text = "${formatter.format(viewModel.calculateGrandTotal())} ${storeConfig.currencySymbol}",
                                 fontWeight = FontWeight.Black,
-                                fontSize = 15.5.sp,
+                                fontSize = 20.sp,
                                 color = NeuAccentBlue
                             )
                         }

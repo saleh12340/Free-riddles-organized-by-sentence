@@ -155,39 +155,82 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                     voiceInputText = clean
                     lastSpokenVoiceText = clean
 
+                    var removedName = ""
                     var removedCount = 0
-                    if (command.index != null && command.index in receiptRows.indices) {
-                        receiptRows.removeAt(command.index)
-                        removedCount++
-                    } else if (command.query.isNotBlank()) {
-                        val iterator = receiptRows.iterator()
-                        while (iterator.hasNext()) {
-                            val row = iterator.next()
-                            if (row.description.contains(command.query, ignoreCase = true) ||
-                                command.query.contains(row.description, ignoreCase = true)) {
-                                iterator.remove()
+
+                    if (command.index != null) {
+                        if (command.index == -1) {
+                            // Delete last item that has data
+                            val lastIdx = receiptRows.indexOfLast { it.hasData }
+                            if (lastIdx >= 0) {
+                                removedName = receiptRows[lastIdx].description
+                                receiptRows.removeAt(lastIdx)
                                 removedCount++
                             }
+                        } else if (command.index in receiptRows.indices) {
+                            removedName = receiptRows[command.index].description
+                            receiptRows.removeAt(command.index)
+                            removedCount++
                         }
-                    } else if (receiptRows.isNotEmpty()) {
-                        val lastIdx = receiptRows.indexOfLast { !it.isCompletelyEmpty }
+                    } else if (command.query.isNotBlank()) {
+                        val q = command.query.trim().lowercase()
+                        val qNoAl = q.replace("ال", "")
+                        val idx = receiptRows.indexOfFirst { row ->
+                            row.hasData && (
+                                row.description.lowercase().contains(q) ||
+                                q.contains(row.description.lowercase()) ||
+                                (qNoAl.isNotBlank() && row.description.lowercase().replace("ال", "").contains(qNoAl))
+                            )
+                        }
+                        if (idx >= 0) {
+                            removedName = receiptRows[idx].description
+                            receiptRows.removeAt(idx)
+                            removedCount++
+                        }
+                    } else {
+                        val lastIdx = receiptRows.indexOfLast { it.hasData }
                         if (lastIdx >= 0) {
+                            removedName = receiptRows[lastIdx].description
                             receiptRows.removeAt(lastIdx)
                             removedCount++
                         }
                     }
 
-                    if (receiptRows.isEmpty() || receiptRows.all { !it.isCompletelyEmpty }) {
-                        repeat(DEFAULT_ROW_COUNT) { receiptRows.add(ReceiptRow()) }
+                    if (receiptRows.isEmpty()) {
+                        receiptRows.add(ReceiptRow())
                     }
 
                     if (removedCount > 0) {
-                        _uiEventMessage.value = "تم حذف الصنف بالصوت بنجاح"
+                        val label = if (removedName.isNotBlank()) " '$removedName'" else ""
+                        _uiEventMessage.value = "تم حذف الصنف$label بالصوت بنجاح"
                         return 1
                     } else {
                         _uiEventMessage.value = "لم يتم العثور على الصنف المطلوب حذفه: '${command.query}'"
                         return 0
                     }
+                }
+                is VoiceCommand.AddCustomer -> {
+                    customerName = command.customerName
+                    voiceInputText = clean
+                    lastSpokenVoiceText = clean
+                    _uiEventMessage.value = "تم تحديد العميل: '${command.customerName}' بالصوت"
+                    return 1
+                }
+                is VoiceCommand.AddProduct -> {
+                    viewModelScope.launch {
+                        repository.saveProduct(
+                            ProductCatalogEntity(
+                                name = command.productName,
+                                defaultUnitPrice = command.price,
+                                category = "عام"
+                            )
+                        )
+                    }
+                    voiceInputText = clean
+                    lastSpokenVoiceText = clean
+                    val priceLabel = if (command.price > 0) " بسعر ${command.price}" else ""
+                    _uiEventMessage.value = "تمت إضافة الصنف '${command.productName}'$priceLabel إلى قائمة الأصناف!"
+                    return 1
                 }
                 is VoiceCommand.Add -> {
                     return applyParsedVoiceItems(clean, command.items)
@@ -417,10 +460,15 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun removeRow(index: Int) {
         if (index in receiptRows.indices) {
+            val removed = receiptRows[index]
             if (receiptRows.size > 1) {
                 receiptRows.removeAt(index)
             } else {
                 receiptRows[0] = ReceiptRow()
+            }
+            if (removed.hasData) {
+                val label = removed.description.ifBlank { "المحدد" }
+                _uiEventMessage.value = "تم حذف الصنف '$label' من الفاتورة"
             }
         }
     }
@@ -716,11 +764,27 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _uiEventMessage.value = "تمت إضافة الصنف $cleanName بنجاح!"
     }
 
-    fun addCatalogProduct(name: String, price: Double, category: String = "عام") {
+    fun addCatalogProduct(
+        name: String,
+        price: Double,
+        category: String = "عام",
+        stockQuantity: Double = 0.0,
+        minStockAlert: Double = 5.0,
+        id: Long = 0
+    ) {
         viewModelScope.launch {
             if (name.isNotBlank()) {
-                repository.saveProduct(ProductCatalogEntity(name = name, defaultUnitPrice = price, category = category))
-                _uiEventMessage.value = "تم إضافة الصنف إلى الدليل بنجاح"
+                repository.saveProduct(
+                    ProductCatalogEntity(
+                        productId = id,
+                        name = name,
+                        defaultUnitPrice = price,
+                        category = category,
+                        stockQuantity = stockQuantity,
+                        minStockAlert = minStockAlert
+                    )
+                )
+                _uiEventMessage.value = "تم حفظ بيانات الصنف والمخزون بنجاح"
             }
         }
     }

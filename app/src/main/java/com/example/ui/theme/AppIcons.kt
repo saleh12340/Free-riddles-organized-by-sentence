@@ -727,5 +727,64 @@ object AppIcons {
             }
         }.build()
     }
+
+    val BarChart: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "BarChart",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(5f, 9.2f)
+                horizontalLineToRelative(3f)
+                verticalLineTo(19f)
+                horizontalLineTo(5f)
+                close()
+                moveTo(10.5f, 5f)
+                horizontalLineToRelative(3f)
+                verticalLineToRelative(14f)
+                horizontalLineToRelative(-3f)
+                close()
+                moveTo(16f, 13f)
+                horizontalLineToRelative(3f)
+                verticalLineToRelative(6f)
+                horizontalLineToRelative(-3f)
+                close()
+            }
+        }.build()
+    }
+
+    val MoreHoriz: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "MoreHoriz",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(6f, 10f)
+                curveToRelative(-1.1f, 0f, -2f, 0.9f, -2f, 2f)
+                reflectiveCurveToRelative(0.9f, 2f, 2f, 2f)
+                reflectiveCurveToRelative(2f, -0.9f, 2f, -2f)
+                reflectiveCurveToRelative(-0.9f, -2f, -2f, -2f)
+                close()
+                moveTo(12f, 10f)
+                curveToRelative(-1.1f, 0f, -2f, 0.9f, -2f, 2f)
+                reflectiveCurveToRelative(0.9f, 2f, 2f, 2f)
+                reflectiveCurveToRelative(2f, -0.9f, 2f, -2f)
+                reflectiveCurveToRelative(-0.9f, -2f, -2f, -2f)
+                close()
+                moveTo(18f, 10f)
+                curveToRelative(-1.1f, 0f, -2f, 0.9f, -2f, 2f)
+                reflectiveCurveToRelative(0.9f, 2f, 2f, 2f)
+                reflectiveCurveToRelative(2f, -0.9f, 2f, -2f)
+                reflectiveCurveToRelative(-0.9f, -2f, -2f, -2f)
+                close()
+            }
+        }.build()
+    }
 }
 

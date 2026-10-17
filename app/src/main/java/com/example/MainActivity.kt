@@ -44,8 +44,10 @@ import java.util.Locale
 enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector) {
     HOME("الرئيسية", AppIcons.Store, AppIcons.Store),
     NEW_INVOICE("فاتورة", AppIcons.Receipt, AppIcons.Receipt),
-    HISTORY("السجل", AppIcons.History, AppIcons.History),
     CUSTOMERS("العملاء", Icons.Default.Person, Icons.Default.Person),
+    REPORTS("التقارير", AppIcons.BarChart, AppIcons.BarChart),
+    MORE("المزيد", AppIcons.MoreHoriz, AppIcons.MoreHoriz),
+    HISTORY("السجل", AppIcons.History, AppIcons.History),
     SETTINGS("الإعدادات", Icons.Default.Settings, Icons.Default.Settings),
     PRODUCTS("الأصناف", AppIcons.Category, AppIcons.Category),
     PRINTER("الطابعة", AppIcons.Print, AppIcons.Print)
@@ -114,17 +116,17 @@ private fun HomeDashboardScreen(
 
         Text("العمليات الرئيسية", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardAction("فاتورة جديدة", "بيع وتسجيل الواصل", AppIcons.Receipt, Color(0xFF2563EB), onNewInvoice, Modifier.weight(1f))
-            DashboardAction("حسابات العملاء", "الأرصدة والحركات", AppIcons.Person, Color(0xFF0F9D78), onCustomers, Modifier.weight(1f))
+            DashboardAction("فاتورة جديدة", "بيع وتسجيل الواصل", AppIcons.Receipt, NeuAccentBlue, onNewInvoice, Modifier.weight(1f))
+            DashboardAction("حسابات العملاء", "الأرصدة والحركات", AppIcons.Person, NeuAccentBlue, onCustomers, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardAction("سجل الفواتير", "عرض وتعديل ومشاركة", AppIcons.History, Color(0xFF7C3AED), onHistory, Modifier.weight(1f))
-            DashboardAction("الأصناف والمخزون", "الأسعار والبحث", AppIcons.Category, Color(0xFFB45309), onProducts, Modifier.weight(1f))
+            DashboardAction("سجل الفواتير", "عرض وتعديل ومشاركة", AppIcons.History, NeuAccentBlue, onHistory, Modifier.weight(1f))
+            DashboardAction("الأصناف والمخزون", "الأسعار والبحث", AppIcons.Category, NeuAccentBlue, onProducts, Modifier.weight(1f))
         }
         Text("الأدوات والإعدادات", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             DashboardAction("إعداد الطابعة", "حرارية 58 / 80 مم", AppIcons.Print, Color(0xFF475569), onPrinter, Modifier.weight(1f))
-            DashboardAction("إعدادات المتجر", "النسخ الاحتياطي والبيانات", Icons.Default.Settings, Color(0xFFBE123C), onSettings, Modifier.weight(1f))
+            DashboardAction("إعدادات المتجر", "النسخ الاحتياطي والبيانات", Icons.Default.Settings, Color(0xFF475569), onSettings, Modifier.weight(1f))
         }
 
         Row(
@@ -211,11 +213,11 @@ private fun DashboardAction(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.heightIn(min = 94.dp).clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.heightIn(min = 86.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
         color = NeuSurface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
-        shadowElevation = 2.dp
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -223,13 +225,13 @@ private fun DashboardAction(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(accent.copy(alpha = 0.14f)),
+                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(23.dp))
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(21.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = NeuTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(title, color = NeuTextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 Text(subtitle, color = NeuTextSecondary, fontSize = 10.sp, maxLines = 2)
             }
         }
@@ -260,17 +262,29 @@ class MainActivity : ComponentActivity() {
 fun MainAppContent(viewModel: InvoiceViewModel) {
     val context = LocalContext.current
     var currentTab by remember { mutableStateOf(NavigationScreen.HOME) }
-    val bottomScreens = listOf(NavigationScreen.HOME, NavigationScreen.NEW_INVOICE, NavigationScreen.HISTORY, NavigationScreen.CUSTOMERS, NavigationScreen.SETTINGS)
+    val bottomScreens = listOf(
+        NavigationScreen.HOME,
+        NavigationScreen.NEW_INVOICE,
+        NavigationScreen.CUSTOMERS,
+        NavigationScreen.REPORTS,
+        NavigationScreen.MORE
+    )
     val uiMessage by viewModel.uiEventMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showExitDialog by remember { mutableStateOf(false) }
 
     // Intercept hardware/system back button
     BackHandler {
-        if (currentTab != NavigationScreen.HOME) {
-            currentTab = NavigationScreen.HOME
-        } else {
-            showExitDialog = true
+        when (currentTab) {
+            NavigationScreen.HISTORY, NavigationScreen.PRODUCTS, NavigationScreen.PRINTER, NavigationScreen.SETTINGS -> {
+                currentTab = NavigationScreen.MORE
+            }
+            NavigationScreen.MORE, NavigationScreen.REPORTS, NavigationScreen.CUSTOMERS, NavigationScreen.NEW_INVOICE -> {
+                currentTab = NavigationScreen.HOME
+            }
+            NavigationScreen.HOME -> {
+                showExitDialog = true
+            }
         }
     }
 
@@ -285,7 +299,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
         containerColor = NeuBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            // Floating Clean Navigation Bar
+            // Floating Clean Navigation Bar (5 Primary Tabs)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -309,7 +323,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     bottomScreens.forEach { screen ->
-                        val isSelected = currentTab == screen || (screen == NavigationScreen.HOME && currentTab in listOf(NavigationScreen.PRODUCTS, NavigationScreen.PRINTER))
+                        val isSelected = currentTab == screen || (screen == NavigationScreen.MORE && currentTab in listOf(NavigationScreen.HISTORY, NavigationScreen.PRODUCTS, NavigationScreen.PRINTER, NavigationScreen.SETTINGS))
                         val itemModifier = if (isSelected) {
                             Modifier
                                 .clip(RoundedCornerShape(16.dp))
@@ -319,12 +333,12 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                                     Color(0xFFBFDBFE),
                                     RoundedCornerShape(16.dp)
                                 )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         } else {
                             Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .clickable { currentTab = screen }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
                         }
 
                         Column(
@@ -341,7 +355,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = screen.label,
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) NeuAccentBlue else NeuTextSecondary
                             )
@@ -371,6 +385,21 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     viewModel = viewModel,
                     onNavigateToPrinterSetup = { currentTab = NavigationScreen.PRINTER }
                 )
+                NavigationScreen.CUSTOMERS -> CustomersScreen(
+                    viewModel = viewModel,
+                    onEditInvoice = { inv ->
+                        viewModel.loadInvoiceForEditing(inv)
+                        currentTab = NavigationScreen.NEW_INVOICE
+                    }
+                )
+                NavigationScreen.REPORTS -> FinancialReportsScreen(viewModel = viewModel)
+                NavigationScreen.MORE -> MoreHubScreen(
+                    viewModel = viewModel,
+                    onNavigateToHistory = { currentTab = NavigationScreen.HISTORY },
+                    onNavigateToProducts = { currentTab = NavigationScreen.PRODUCTS },
+                    onNavigateToPrinter = { currentTab = NavigationScreen.PRINTER },
+                    onNavigateToSettings = { currentTab = NavigationScreen.SETTINGS }
+                )
                 NavigationScreen.HISTORY -> InvoiceHistoryScreen(
                     viewModel = viewModel,
                     onEditInvoice = { inv ->
@@ -380,13 +409,6 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onNavigateToPrinterSetup = { currentTab = NavigationScreen.PRINTER }
                 )
                 NavigationScreen.PRODUCTS -> ProductsCatalogScreen(viewModel = viewModel)
-                NavigationScreen.CUSTOMERS -> CustomersScreen(
-                    viewModel = viewModel,
-                    onEditInvoice = { inv ->
-                        viewModel.loadInvoiceForEditing(inv)
-                        currentTab = NavigationScreen.NEW_INVOICE
-                    }
-                )
                 NavigationScreen.PRINTER -> PrinterSetupScreen(viewModel = viewModel)
                 NavigationScreen.SETTINGS -> StoreSettingsScreen(viewModel = viewModel)
             }
