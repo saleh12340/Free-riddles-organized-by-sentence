@@ -255,7 +255,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     bottomScreens.forEach { screen ->
-                        val isSelected = currentTab == screen
+                        val isSelected = currentTab == screen || (screen == NavigationScreen.HOME && currentTab in listOf(NavigationScreen.PRODUCTS, NavigationScreen.PRINTER))
                         val itemModifier = if (isSelected) {
                             Modifier
                                 .clip(RoundedCornerShape(18.dp))
