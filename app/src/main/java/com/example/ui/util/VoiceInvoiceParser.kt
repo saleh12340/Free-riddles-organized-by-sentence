@@ -4,6 +4,13 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
+sealed class VoiceCommand {
+    data class Add(val items: List<ParsedVoiceItem>) : VoiceCommand()
+    data class DeleteItem(val query: String, val index: Int? = null) : VoiceCommand()
+    object ClearInvoice : VoiceCommand()
+    object Unknown : VoiceCommand()
+}
+
 data class ParsedVoiceItem(
     val description: String,
     val quantity: String,
@@ -13,6 +20,46 @@ data class ParsedVoiceItem(
 )
 
 object VoiceInvoiceParser {
+
+    fun parseVoiceCommand(text: String): VoiceCommand {
+        val cleanText = text.trim()
+        val lower = cleanText.lowercase()
+
+        // 1. Check clear invoice
+        if (lower.contains("مسح الفاتورة") || lower.contains("حذف الفاتورة") || lower.contains("إلغاء الفاتورة") || lower.contains("تفريغ الفاتورة") || lower.contains("مسح الكل") || lower.contains("الغاء الفاتوره")) {
+            return VoiceCommand.ClearInvoice
+        }
+
+        // 2. Check deletion / cancellation of item
+        val deletePrefixes = listOf("احذف", "حذف", "الغاء", "إلغاء", "مسح", "شيل", "ارفع")
+        for (prefix in deletePrefixes) {
+            if (lower.startsWith(prefix) || lower.contains(" $prefix ")) {
+                val remainder = lower.replace(prefix, "").trim()
+                val words = remainder.split("\\s+".toRegex())
+                var targetIndex: Int? = null
+                var query = remainder
+
+                for (w in words) {
+                    val num = w.toEnglishDigits().toDoubleOrNull() ?: unitsMap[w]
+                    if (num != null && num in 1.0..50.0) {
+                        targetIndex = num.toInt() - 1
+                        query = remainder.replace(w, "").trim()
+                        break
+                    }
+                }
+                return VoiceCommand.DeleteItem(query = query, index = targetIndex)
+            }
+        }
+
+        // 3. Otherwise parse as add items
+        val items = parseVoiceInput(cleanText)
+        if (items.isNotEmpty()) {
+            return VoiceCommand.Add(items)
+        }
+
+        return VoiceCommand.Unknown
+    }
+
 
     private val commonIgnoredPrefixWords = setOf(
         "سجل", "اكتب", "ضيف", "أضف", "اضف", "فاتورة", "فاتوره", "حط", "صنف", "البيان",

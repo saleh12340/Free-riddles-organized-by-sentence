@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.ui.util.toEnglishDigits
 import com.example.ui.util.VoiceInvoiceParser
+import com.example.ui.util.VoiceCommand
 import com.example.ui.util.ParsedVoiceItem
 import java.io.File
 import java.text.SimpleDateFormat
@@ -136,9 +137,64 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         for (candidate in candidates) {
             val clean = candidate.trim()
             if (clean.isBlank()) continue
-            val parsed = VoiceInvoiceParser.parseVoiceInput(clean)
-            if (parsed.isNotEmpty()) {
-                return applyParsedVoiceItems(clean, parsed)
+            val command = VoiceInvoiceParser.parseVoiceCommand(clean)
+            when (command) {
+                is VoiceCommand.ClearInvoice -> {
+                    previousReceiptRowsSnapshot = receiptRows.map { it.copy() }
+                    canUndoVoiceInput = true
+                    receiptRows.clear()
+                    repeat(DEFAULT_ROW_COUNT) { receiptRows.add(ReceiptRow()) }
+                    voiceInputText = clean
+                    lastSpokenVoiceText = clean
+                    _uiEventMessage.value = "تم مسح الفاتورة بالصوت بنجاح"
+                    return 1
+                }
+                is VoiceCommand.DeleteItem -> {
+                    previousReceiptRowsSnapshot = receiptRows.map { it.copy() }
+                    canUndoVoiceInput = true
+                    voiceInputText = clean
+                    lastSpokenVoiceText = clean
+
+                    var removedCount = 0
+                    if (command.index != null && command.index in receiptRows.indices) {
+                        receiptRows.removeAt(command.index)
+                        removedCount++
+                    } else if (command.query.isNotBlank()) {
+                        val iterator = receiptRows.iterator()
+                        while (iterator.hasNext()) {
+                            val row = iterator.next()
+                            if (row.description.contains(command.query, ignoreCase = true) ||
+                                command.query.contains(row.description, ignoreCase = true)) {
+                                iterator.remove()
+                                removedCount++
+                            }
+                        }
+                    } else if (receiptRows.isNotEmpty()) {
+                        val lastIdx = receiptRows.indexOfLast { !it.isCompletelyEmpty }
+                        if (lastIdx >= 0) {
+                            receiptRows.removeAt(lastIdx)
+                            removedCount++
+                        }
+                    }
+
+                    if (receiptRows.isEmpty() || receiptRows.all { !it.isCompletelyEmpty }) {
+                        repeat(DEFAULT_ROW_COUNT) { receiptRows.add(ReceiptRow()) }
+                    }
+
+                    if (removedCount > 0) {
+                        _uiEventMessage.value = "تم حذف الصنف بالصوت بنجاح"
+                        return 1
+                    } else {
+                        _uiEventMessage.value = "لم يتم العثور على الصنف المطلوب حذفه: '${command.query}'"
+                        return 0
+                    }
+                }
+                is VoiceCommand.Add -> {
+                    return applyParsedVoiceItems(clean, command.items)
+                }
+                is VoiceCommand.Unknown -> {
+                    // try next candidate
+                }
             }
         }
         val first = candidates.firstOrNull()?.trim() ?: ""
@@ -146,7 +202,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             voiceInputText = first
             lastSpokenVoiceText = first
         }
-        _uiEventMessage.value = "لم يتم التعرف على تفاصيل الصنف من الصوت، يرجى التحدث بوضوح (مثال: 4000 كرتون عصير 2 أو 1000 تونة 2)"
+        _uiEventMessage.value = "لم يتم التعرف على الأمر الصوتي، يرجى التحدث بوضوح (مثال: 4000 كرتون عصير 2 أو احذف عصير)"
         return 0
     }
 
