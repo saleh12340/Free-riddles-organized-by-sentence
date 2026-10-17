@@ -82,21 +82,21 @@ private fun HomeDashboardScreen(
     ) {
         NeuCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color(0xFF10243D),
-            shape = RoundedCornerShape(20.dp),
-            elevation = 7.dp,
-            contentPadding = PaddingValues(18.dp)
+            backgroundColor = Color(0xFF1E3A8A),
+            shape = RoundedCornerShape(18.dp),
+            elevation = 3.dp,
+            contentPadding = PaddingValues(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(
-                    modifier = Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF1D4ED8)),
+                    modifier = Modifier.size(50.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF2563EB)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(AppIcons.Category, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                    Icon(AppIcons.Category, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text((config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" }, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("إدارة المبيعات والفواتير", fontSize = 13.sp, color = Color(0xFFB8C8DC))
+                    Text((config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" }, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("إدارة المبيعات والفواتير", fontSize = 13.sp, color = Color(0xFFDBEAFE))
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -154,16 +154,17 @@ private fun HomeDashboardScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .background(NeuSurface)
+                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                         .clickable(onClick = onHistory)
                         .padding(horizontal = 12.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
-                        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF1D3B63)),
+                        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFEFF6FF)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(AppIcons.Receipt, contentDescription = null, tint = Color(0xFF78A8FF), modifier = Modifier.size(19.dp))
+                        Icon(AppIcons.Receipt, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(19.dp))
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text("فاتورة #" + entry.invoice.invoiceNumber, color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -171,7 +172,7 @@ private fun HomeDashboardScreen(
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(money.format(entry.invoice.grandTotal), color = NeuTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text(entry.invoice.paymentType, color = if (entry.invoice.paymentType == "أجل") Color(0xFFFBBF24) else NeuSuccess, fontSize = 10.sp)
+                        Text(entry.invoice.paymentType, color = if (entry.invoice.paymentType == "أجل") Color(0xFFD97706) else NeuSuccess, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 if (index < latestInvoices.lastIndex) Spacer(Modifier.height(5.dp))
@@ -184,17 +185,17 @@ private fun HomeDashboardScreen(
 @Composable
 private fun DashboardMetric(label: String, amount: String, currency: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF1C3553)).padding(10.dp)
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.12f)).padding(10.dp)
     ) {
-        Text(label, color = Color(0xFFC6D5E8), fontSize = 12.sp)
+        Text(label, color = Color(0xFFDBEAFE), fontSize = 12.sp)
         Text(amount, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(currency, color = Color(0xFF93B4D8), fontSize = 11.sp)
+        Text(currency, color = Color(0xFFBFDBFE), fontSize = 11.sp)
     }
 }
 
 @Composable
 private fun DashboardSmallMetric(label: String, value: String, modifier: Modifier = Modifier) {
-    NeuCard(modifier = modifier, backgroundColor = NeuSurface, elevation = 2.dp, contentPadding = PaddingValues(10.dp)) {
+    NeuCard(modifier = modifier, backgroundColor = NeuSurface, elevation = 1.dp, contentPadding = PaddingValues(10.dp)) {
         Text(value, color = NeuAccentBlue, fontSize = 21.sp, fontWeight = FontWeight.Bold)
         Text(label, color = NeuTextSecondary, fontSize = 11.sp, maxLines = 1)
     }
@@ -284,20 +285,21 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
         containerColor = NeuBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            // Floating Soft UI Neumorphic Navigation Bar
+            // Floating Clean Navigation Bar
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 6.dp)
                     .shadow(
-                        elevation = 10.dp,
-                        shape = RoundedCornerShape(26.dp),
-                        ambientColor = NeuDarkShadow.copy(alpha = 0.5f),
-                        spotColor = NeuDarkShadow.copy(alpha = 0.65f)
+                        elevation = 6.dp,
+                        shape = RoundedCornerShape(22.dp),
+                        ambientColor = Color(0x14000000),
+                        spotColor = Color(0x1E000000)
                     )
-                    .clip(RoundedCornerShape(26.dp)),
-                color = NeuSurfaceRaised
+                    .clip(RoundedCornerShape(22.dp)),
+                color = Color.White,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Row(
                     modifier = Modifier
@@ -310,17 +312,17 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                         val isSelected = currentTab == screen || (screen == NavigationScreen.HOME && currentTab in listOf(NavigationScreen.PRODUCTS, NavigationScreen.PRINTER))
                         val itemModifier = if (isSelected) {
                             Modifier
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(NeuInsetBg)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0xFFEFF6FF))
                                 .border(
                                     1.dp,
-                                    NeuInsetBorder.copy(alpha = 0.6f),
-                                    RoundedCornerShape(18.dp)
+                                    Color(0xFFBFDBFE),
+                                    RoundedCornerShape(16.dp)
                                 )
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         } else {
                             Modifier
-                                .clip(RoundedCornerShape(18.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .clickable { currentTab = screen }
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         }

@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
@@ -24,75 +23,59 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // ============================================================================
-// NEUMORPHIC COLOR PALETTE (From user's Soft UI screenshot: #0072ff, rgba(163,177,198,.65), etc.)
+// NATURAL PROFESSIONAL COLOR PALETTE (Thermal Receipt Natural Light Mode)
 // ============================================================================
-val NeuBackground = Color(0xFF0B1220)        // Deep navy app canvas with high-contrast surfaces
-val NeuSurface = Color(0xFF142238)           // Dark raised card surface
-val NeuSurfaceRaised = Color(0xFF1D304B)     // Elevated navy surface
-val NeuDarkShadow = Color(0xFF020617)        // Deep shadow
-val NeuLightHighlight = Color(0xFF334862)    // Highlight border
-val NeuInsetBg = Color(0xFF0D192A)           // Recessed dark input background
-val NeuInsetBorder = Color(0xFF3B506B)       // Sunken input border
+val NeuBackground = Color(0xFFF8FAFC)        // Clean natural paper canvas (Slate 50)
+val NeuSurface = Color(0xFFFFFFFF)           // Pure white card surface
+val NeuSurfaceRaised = Color(0xFFFFFFFF)     // Clean white elevated surface
+val NeuDarkShadow = Color(0x140F172A)        // Soft natural subtle shadow
+val NeuLightHighlight = Color(0xFFE2E8F0)    // Clean crisp neutral border
+val NeuInsetBg = Color(0xFFF1F5F9)           // Soft recessed input field background
+val NeuInsetBorder = Color(0xFFCBD5E1)       // Natural input border
 
-val NeuAccentBlue = Color(0xFF4F8CFF)        // Professional clean blue (Blue 600)
-val NeuAccentBlueHover = Color(0xFF78A8FF)   // Deep hover state
-val NeuAccentBlueGlow = Color(0x334F8CFF)    // Soft blue glow
+val NeuAccentBlue = Color(0xFF1E3A8A)        // Classic thermal navy (ReceiptInkNavy)
+val NeuAccentBlueHover = Color(0xFF2563EB)   // Professional blue accent
+val NeuAccentBlueGlow = Color(0x1A1E3A8A)    // Soft subtle tint
 
-val NeuTextPrimary = Color(0xFFF1F5F9)       // Dark slate primary text (Slate 900)
-val NeuTextSecondary = Color(0xFFCBD5E1)     // Slate 600 secondary text
-val NeuTextMuted = Color(0xFF94A3B8)         // Slate 500 muted text
+val NeuTextPrimary = Color(0xFF0F172A)       // Crisp dark slate text (Slate 900)
+val NeuTextSecondary = Color(0xFF475569)     // Slate 600 secondary text
+val NeuTextMuted = Color(0xFF94A3B8)         // Slate 400 muted text
 
-val NeuSuccess = Color(0xFF34D399)           // Soft emerald
-val NeuError = Color(0xFFFB7185)             // Soft crimson alert
+val NeuSuccess = Color(0xFF059669)           // Natural emerald
+val NeuError = Color(0xFFDC2626)             // Natural crimson alert
 
 // ============================================================================
-// NEUMORPHIC REUSABLE COMPOSABLES
+// NEUMORPHIC REUSABLE COMPOSABLES (Natural, Crisp & Professional)
 // ============================================================================
 
 /**
- * Raised Neumorphic Card with soft dual elevation and top-left light border highlight.
- * Compact and sleek to fit content, icons, and texts crisply without wasted space.
+ * Natural Raised Card with soft subtle elevation and clean crisp border.
  */
 @Composable
 fun NeuCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(13.dp),
+    shape: Shape = RoundedCornerShape(14.dp),
     backgroundColor: Color = NeuSurface,
-    elevation: Dp = 5.dp,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+    elevation: Dp = 2.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .shadow(
-                elevation = elevation,
-                shape = shape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.45f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
-            )
-            .clip(shape)
-            .background(backgroundColor)
-            .border(
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            NeuLightHighlight.copy(alpha = 0.95f),
-                            NeuLightHighlight.copy(alpha = 0.40f),
-                            NeuDarkShadow.copy(alpha = 0.25f)
-                        )
-                    )
-                ),
-                shape = shape
-            )
-            .padding(contentPadding)
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = backgroundColor,
+        shadowElevation = elevation,
+        border = BorderStroke(1.dp, NeuLightHighlight)
     ) {
-        Column(content = content)
+        Column(
+            modifier = Modifier.padding(contentPadding),
+            content = content
+        )
     }
 }
 
 /**
- * Sunken / Inset Neumorphic Box for TextFields and debossed controls.
+ * Sunken / Inset Box for TextFields and debossed controls with natural light styling.
  */
 @Composable
 fun NeuInsetBox(
@@ -107,16 +90,7 @@ fun NeuInsetBox(
             .clip(shape)
             .background(backgroundColor)
             .border(
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            NeuInsetBorder.copy(alpha = 0.85f),
-                            NeuInsetBorder.copy(alpha = 0.40f),
-                            NeuLightHighlight.copy(alpha = 0.80f)
-                        )
-                    )
-                ),
+                border = BorderStroke(1.dp, NeuInsetBorder),
                 shape = shape
             )
             .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -126,7 +100,7 @@ fun NeuInsetBox(
 }
 
 /**
- * Primary Neumorphic Button with vibrant blue gradient and soft blue drop glow.
+ * Primary & Secondary Button with clean natural thermal styling.
  */
 @Composable
 fun NeuButton(
@@ -137,133 +111,82 @@ fun NeuButton(
     isPrimary: Boolean = true,
     content: @Composable RowScope.() -> Unit
 ) {
-    val bgModifier = if (isPrimary) {
-        Modifier
-            .shadow(
-                elevation = 6.dp,
-                shape = shape,
-                ambientColor = NeuAccentBlueGlow,
-                spotColor = NeuAccentBlue.copy(alpha = 0.45f)
+    if (isPrimary) {
+        Button(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = NeuAccentBlue,
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                content = content
             )
-            .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF268AFF),
-                        NeuAccentBlue
-                    )
-                )
-            )
+        }
     } else {
-        Modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = shape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.45f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.55f)
+        OutlinedButton(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = NeuSurface,
+                contentColor = NeuTextPrimary
+            ),
+            border = BorderStroke(1.dp, NeuInsetBorder)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                content = content
             )
-            .clip(shape)
-            .background(NeuSurfaceRaised)
-            .border(
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            NeuLightHighlight.copy(alpha = 0.95f),
-                            NeuDarkShadow.copy(alpha = 0.20f)
-                        )
-                    )
-                ),
-                shape = shape
-            )
-    }
-
-    Box(
-        modifier = modifier
-            .then(bgModifier)
-            .clickable(
-                enabled = enabled,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple()
-            ) { onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            content = content
-        )
+        }
     }
 }
 
 /**
- * Circular Neumorphic Action Button.
+ * Circular Action Button.
  */
 @Composable
 fun NeuCircleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 36.dp,
+    size: Dp = 38.dp,
     isPrimary: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val bgModifier = if (isPrimary) {
-        Modifier
-            .shadow(
-                elevation = 6.dp,
-                shape = CircleShape,
-                ambientColor = NeuAccentBlueGlow,
-                spotColor = NeuAccentBlue.copy(alpha = 0.45f)
-            )
-            .clip(CircleShape)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF268AFF),
-                        NeuAccentBlue
-                    )
-                )
-            )
+    if (isPrimary) {
+        Surface(
+            onClick = onClick,
+            modifier = modifier.size(size),
+            shape = CircleShape,
+            color = NeuAccentBlue,
+            shadowElevation = 3.dp
+        ) {
+            Box(contentAlignment = Alignment.Center, content = content)
+        }
     } else {
-        Modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = CircleShape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.50f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
-            )
-            .clip(CircleShape)
-            .background(NeuSurfaceRaised)
-            .border(
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            NeuLightHighlight.copy(alpha = 0.95f),
-                            NeuDarkShadow.copy(alpha = 0.25f)
-                        )
-                    )
-                ),
-                shape = CircleShape
-            )
+        Surface(
+            onClick = onClick,
+            modifier = modifier.size(size),
+            shape = CircleShape,
+            color = NeuSurface,
+            shadowElevation = 1.dp,
+            border = BorderStroke(1.dp, NeuLightHighlight)
+        ) {
+            Box(contentAlignment = Alignment.Center, content = content)
+        }
     }
-
-    Box(
-        modifier = modifier
-            .size(size)
-            .then(bgModifier)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple()
-            ) { onClick() },
-        contentAlignment = Alignment.Center,
-        content = content
-    )
 }
 
 /**
- * Neumorphic Badge / Icon Container.
+ * Natural Badge / Icon Container.
  */
 @Composable
 fun NeuBadge(
@@ -271,32 +194,15 @@ fun NeuBadge(
     size: Dp = 36.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .shadow(
-                elevation = 4.dp,
-                shape = CircleShape,
-                ambientColor = NeuDarkShadow.copy(alpha = 0.50f),
-                spotColor = NeuDarkShadow.copy(alpha = 0.60f)
-            )
-            .clip(CircleShape)
-            .background(NeuSurface)
-            .border(
-                border = BorderStroke(
-                    width = 1.2.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            NeuLightHighlight,
-                            NeuDarkShadow.copy(alpha = 0.30f)
-                        )
-                    )
-                ),
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center,
-        content = content
-    )
+    Surface(
+        modifier = modifier.size(size),
+        shape = CircleShape,
+        color = NeuSurface,
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, NeuLightHighlight)
+    ) {
+        Box(contentAlignment = Alignment.Center, content = content)
+    }
 }
 
 /**
@@ -307,29 +213,17 @@ fun NeuIconBox(
     modifier: Modifier = Modifier,
     size: Dp = 32.dp,
     shape: Shape = RoundedCornerShape(8.dp),
-    backgroundColor: Color = NeuSurfaceRaised,
+    backgroundColor: Color = NeuInsetBg,
     content: @Composable BoxScope.() -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(shape)
-            .background(backgroundColor)
-            .border(
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            NeuLightHighlight.copy(alpha = 0.95f),
-                            NeuDarkShadow.copy(alpha = 0.25f)
-                        )
-                    )
-                ),
-                shape = shape
-            ),
-        contentAlignment = Alignment.Center,
-        content = content
-    )
+    Surface(
+        modifier = modifier.size(size),
+        shape = shape,
+        color = backgroundColor,
+        border = BorderStroke(1.dp, NeuLightHighlight)
+    ) {
+        Box(contentAlignment = Alignment.Center, content = content)
+    }
 }
 
 /**
@@ -346,7 +240,8 @@ fun NeuPillBadge(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(6.dp),
-        color = backgroundColor
+        color = backgroundColor,
+        border = BorderStroke(0.6.dp, NeuLightHighlight)
     ) {
         Text(
             text = text,

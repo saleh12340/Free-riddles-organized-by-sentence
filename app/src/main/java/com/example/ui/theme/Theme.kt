@@ -25,12 +25,14 @@ private val LightColorScheme = lightColorScheme(
     background = NavyLightBg,
     surface = NavyCardBg,
     onPrimary = Color.White,
-    onSecondary = Color.White
+    onSecondary = Color.White,
+    onBackground = Color(0xFF0F172A),
+    onSurface = Color(0xFF0F172A)
 )
 
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = false, // Natural Mode Default is Light
     dynamicColor: Boolean = false, // Set false to preserve thermal receipt identity
     content: @Composable () -> Unit
 ) {
