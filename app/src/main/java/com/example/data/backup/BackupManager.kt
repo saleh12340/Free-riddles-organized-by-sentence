@@ -157,11 +157,27 @@ class BackupManager(
                     paymentType = jsonInvoice.optString("paymentType", "نقداً"),
                     subtotal = jsonInvoice.optDouble("subtotal", 0.0),
                     discount = jsonInvoice.optDouble("discount", 0.0),
-                    paidAmount = jsonInvoice.optDouble("paidAmount", 0.0),
-                    remainingAmount = jsonInvoice.optDouble("remainingAmount", 0.0),
+                    paidAmount = if (jsonInvoice.has("paidAmount")) {
+                        jsonInvoice.optDouble("paidAmount", 0.0)
+                    } else if (jsonInvoice.optString("paymentType", "نقداً") == "نقداً") {
+                        jsonInvoice.optDouble("grandTotal", 0.0)
+                    } else {
+                        0.0
+                    },
+                    remainingAmount = if (jsonInvoice.has("remainingAmount")) {
+                        jsonInvoice.optDouble("remainingAmount", 0.0)
+                    } else {
+                        (jsonInvoice.optDouble("grandTotal", 0.0) - if (jsonInvoice.has("paidAmount")) {
+                            jsonInvoice.optDouble("paidAmount", 0.0)
+                        } else if (jsonInvoice.optString("paymentType", "نقداً") == "نقداً") {
+                            jsonInvoice.optDouble("grandTotal", 0.0)
+                        } else {
+                            0.0
+                        }).coerceAtLeast(0.0)
+                    },
                     grandTotal = jsonInvoice.optDouble("grandTotal", 0.0),
                     notes = jsonInvoice.optString("notes", ""),
-                    createdAtTimestamp = jsonInvoice.optLong("createdAtTimestamp", 0L)
+                    createdAtTimestamp = jsonInvoice.optLong("createdAtTimestamp", System.currentTimeMillis() + i)
                 )
                 val items = ArrayList<InvoiceItemEntity>()
                 val itemsArray = jsonInvoice.optJSONArray("items") ?: JSONArray()
@@ -179,27 +195,13 @@ class BackupManager(
                 invoices.add(invoice to items)
             }
 
-            val receiptsArray = root.optJSONArray("customerReceipts") ?: JSONArray()
-            val receipts = ArrayList<CustomerReceiptEntity>(receiptsArray.length())
-            for (i in 0 until receiptsArray.length()) {
-                val receipt = receiptsArray.getJSONObject(i)
-                receipts.add(CustomerReceiptEntity(
-                    receiptId = 0,
-                    customerName = receipt.optString("customerName", ""),
-                    amount = receipt.optDouble("amount", 0.0),
-                    dateString = receipt.optString("dateString", ""),
-                    paymentType = receipt.optString("paymentType", ""),
-                    notes = receipt.optString("notes", ""),
-                    createdAtTimestamp = receipt.optLong("createdAtTimestamp", 0L)
-                ))
-            }
-
+            val receiptsArray = root.optJSONArray("customerReceipts")\n            val receipts = if (receiptsArray == null) {\n                // Legacy backups do not contain receipts; keep current receipt history instead of deleting it.\n                repository.allReceipts.first()\n            } else ArrayList<CustomerReceiptEntity>(receiptsArray.length()).also { parsed ->\n                for (i in 0 until receiptsArray.length()) {\n                    val receipt = receiptsArray.getJSONObject(i)\n                    parsed.add(CustomerReceiptEntity(\n                        receiptId = 0,\n                        customerName = receipt.optString("customerName", ""),\n                        amount = receipt.optDouble("amount", 0.0),\n                        dateString = receipt.optString("dateString", ""),\n                        paymentType = receipt.optString("paymentType", ""),\n                        notes = receipt.optString("notes", ""),\n                        createdAtTimestamp = receipt.optLong("createdAtTimestamp", System.currentTimeMillis() + i)\n                    ))\n                }\n            }\n
             val safetyJson = createBackupJson()
             val backupDir = File(context.filesDir, "restore-safety-backups")
             if (!backupDir.exists() && !backupDir.mkdirs()) {
                 return@withContext BackupRestoreResult.Error("تعذر إنشاء مجلد النسخة الاحتياطية؛ لم يتم تغيير قاعدة البيانات")
             }
-            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(Date())
             val safetyFile = File(backupDir, "before_restore_$stamp.json")
             safetyFile.writeText(safetyJson, Charsets.UTF_8)
             if (!safetyFile.isFile || safetyFile.length() == 0L) {
