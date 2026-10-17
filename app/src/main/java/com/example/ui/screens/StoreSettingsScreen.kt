@@ -531,7 +531,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
             title = { Text("تأكيد استعادة النسخة الاحتياطية", fontWeight = FontWeight.Bold, color = NeuTextPrimary) },
             text = {
                 Text(
-                    "تنبيه: سيتم استعادة الفواتير وقائمة الأصناف وإعدادات المحل من النسخة المحددة ودمجها في قاعدة البيانات.\n\nهل تريد المتابعة وتأكيد الاستعادة؟",
+                    "تحذير: ستُستبدل بيانات التطبيق الحالية بالأصناف والفواتير وإعدادات المحل الموجودة في الملف. سيُحفظ أولاً ملف أمان قابل للاستعادة من البيانات الحالية داخل مساحة التطبيق. أرقام الفواتير وأسماء الأصناف المتكررة في الملف ستبقى كما هي.\n\nهل تريد المتابعة؟",
                     color = NeuTextSecondary
                 )
             },
@@ -544,7 +544,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                         viewModel.restoreFromBackupJson(json) { result ->
                             when (result) {
                                 is BackupRestoreResult.Success -> {
-                                    Toast.makeText(context, "تمت الاستعادة بنجاح: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف!", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "تم الاستبدال: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف. نسخة الأمان: ${result.safetyBackupFileName}", Toast.LENGTH_LONG).show()
                                 }
                                 is BackupRestoreResult.Error -> {
                                     Toast.makeText(context, "خطأ: ${result.message}", Toast.LENGTH_LONG).show()
