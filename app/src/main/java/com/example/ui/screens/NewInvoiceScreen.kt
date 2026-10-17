@@ -946,7 +946,7 @@ private fun SmartRulerInputBox(
     align: TextAlign = TextAlign.Start,
     imeAction: ImeAction = ImeAction.Next,
     onDone: () -> Unit = {},
-    textColor: Color = NeuTextPrimary
+    textColor: Color = Color(0xFF0F172A)
 ) {
     var isFocused by remember { mutableStateOf(false) }
 

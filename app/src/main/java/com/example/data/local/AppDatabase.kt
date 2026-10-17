@@ -38,7 +38,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "fatooraty_database.db"
                 )
                 .addCallback(DatabaseCallback(context.applicationContext))
-                .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
                 instance
@@ -51,13 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
                 CoroutineScope(Dispatchers.IO).launch {
                     val appDb = getDatabase(context)
                     appDb.storeConfigDao().insertOrUpdate(StoreConfigEntity())
-                    
-                    // Seed initial sample products for quick testing
-                    appDb.productDao().insertProduct(ProductCatalogEntity(name = "أكياس بيضاء 50كجم", defaultUnitPrice = 1200.0))
-                    appDb.productDao().insertProduct(ProductCatalogEntity(name = "أكياس مرحلة 25كجم", defaultUnitPrice = 900.0))
-                    appDb.productDao().insertProduct(ProductCatalogEntity(name = "كرتون شاي ممتاز", defaultUnitPrice = 45000.0))
-                    appDb.productDao().insertProduct(ProductCatalogEntity(name = "كيس سكر 10كجم", defaultUnitPrice = 15000.0))
-                    appDb.productDao().insertProduct(ProductCatalogEntity(name = "كيس أرز 20كجم", defaultUnitPrice = 28000.0))
+                    // Keep a fresh installation free of fake sample products.
                 }
             }
         }

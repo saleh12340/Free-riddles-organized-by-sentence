@@ -57,6 +57,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
     // Dialog & file picker states for Backup / Restore
     var backupJsonToExport by remember { mutableStateOf<String?>(null) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showSafetyRestoreConfirm by remember { mutableStateOf(false) }
     var restoreJsonData by remember { mutableStateOf<String?>(null) }
     var isOperatingBackup by remember { mutableStateOf(false) }
 
@@ -242,6 +243,21 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("حفظ كملف", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                NeuButton(
+                    onClick = { showSafetyRestoreConfirm = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(34.dp),
+                    shape = RoundedCornerShape(7.dp),
+                    isPrimary = false
+                ) {
+                    Icon(AppIcons.Restore, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuAccentBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("استرجاع نسخة الأمان السابقة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -520,6 +536,49 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
         }
     }
 
+    if (showSafetyRestoreConfirm) {
+        AlertDialog(
+            onDismissRequest = { showSafetyRestoreConfirm = false },
+            containerColor = NeuSurface,
+            title = { Text("استرجاع نسخة الأمان", fontWeight = FontWeight.Bold, color = NeuTextPrimary) },
+            text = {
+                Text(
+                    "سيتم استبدال البيانات الحالية بآخر نسخة أمان محفوظة قبل عملية استعادة سابقة. وسيُحفظ ملف أمان جديد من البيانات الحالية قبل الاستبدال. هل تريد المتابعة؟",
+                    color = NeuTextSecondary
+                )
+            },
+            confirmButton = {
+                NeuButton(
+                    onClick = {
+                        showSafetyRestoreConfirm = false
+                        isOperatingBackup = true
+                        viewModel.restoreLatestSafetyBackup { result ->
+                            isOperatingBackup = false
+                            when (result) {
+                                is BackupRestoreResult.Success -> Toast.makeText(
+                                    context,
+                                    "تم استرجاع نسخة الأمان: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                is BackupRestoreResult.Error -> Toast.makeText(
+                                    context,
+                                    "تعذر الاسترجاع: ${result.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    },
+                    isPrimary = true
+                ) { Text("استرجاع الآن", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                NeuButton(onClick = { showSafetyRestoreConfirm = false }, isPrimary = false) {
+                    Text("إلغاء", color = NeuTextPrimary, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
     // Restore Confirmation Dialog
     if (showRestoreConfirmDialog && restoreJsonData != null) {
         AlertDialog(
@@ -531,7 +590,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
             title = { Text("تأكيد استعادة النسخة الاحتياطية", fontWeight = FontWeight.Bold, color = NeuTextPrimary) },
             text = {
                 Text(
-                    "تنبيه: سيتم استعادة الفواتير وقائمة الأصناف وإعدادات المحل من النسخة المحددة ودمجها في قاعدة البيانات.\n\nهل تريد المتابعة وتأكيد الاستعادة؟",
+                    "تحذير: ستُستبدل بيانات التطبيق الحالية بالأصناف والفواتير وإعدادات المحل الموجودة في الملف. سيُحفظ أولاً ملف أمان قابل للاستعادة من البيانات الحالية داخل مساحة التطبيق. أرقام الفواتير وأسماء الأصناف المتكررة في الملف ستبقى كما هي.\n\nهل تريد المتابعة؟",
                     color = NeuTextSecondary
                 )
             },
@@ -544,7 +603,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                         viewModel.restoreFromBackupJson(json) { result ->
                             when (result) {
                                 is BackupRestoreResult.Success -> {
-                                    Toast.makeText(context, "تمت الاستعادة بنجاح: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف!", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "تم الاستبدال: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف. نسخة الأمان: ${result.safetyBackupFileName}", Toast.LENGTH_LONG).show()
                                 }
                                 is BackupRestoreResult.Error -> {
                                     Toast.makeText(context, "خطأ: ${result.message}", Toast.LENGTH_LONG).show()

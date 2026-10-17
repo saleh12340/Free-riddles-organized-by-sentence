@@ -694,6 +694,26 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun restoreLatestSafetyBackup(onComplete: (BackupRestoreResult) -> Unit) {
+        viewModelScope.launch {
+            val json = backupManager.readLatestSafetyBackupJson()
+            if (json.isNullOrBlank()) {
+                onComplete(BackupRestoreResult.Error("لا توجد نسخة أمان سابقة قابلة للاستعادة"))
+                return@launch
+            }
+            val result = backupManager.restoreFromJson(json)
+            when (result) {
+                is BackupRestoreResult.Success -> {
+                    _uiEventMessage.value = "تمت استعادة نسخة الأمان: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف"
+                }
+                is BackupRestoreResult.Error -> {
+                    _uiEventMessage.value = "فشل استرجاع نسخة الأمان: ${result.message}"
+                }
+            }
+            onComplete(result)
+        }
+    }
+
     fun restoreFromBackupJson(jsonString: String, onComplete: (BackupRestoreResult) -> Unit) {
         viewModelScope.launch {
             val result = backupManager.restoreFromJson(jsonString)

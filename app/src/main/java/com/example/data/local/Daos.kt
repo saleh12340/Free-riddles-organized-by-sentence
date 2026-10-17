@@ -13,6 +13,9 @@ interface StoreConfigDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(config: StoreConfigEntity)
+
+    @Query("DELETE FROM store_config")
+    suspend fun clearAll()
 }
 
 data class InvoiceWithItems(
@@ -47,6 +50,12 @@ interface InvoiceDao {
     @Query("DELETE FROM invoice_items WHERE invoiceId = :invoiceId")
     suspend fun deleteInvoiceItems(invoiceId: Long)
 
+    @Query("DELETE FROM invoice_items")
+    suspend fun clearAllItems()
+
+    @Query("DELETE FROM invoices")
+    suspend fun clearAllInvoices()
+
     @Transaction
     suspend fun saveFullInvoice(invoice: InvoiceEntity, items: List<InvoiceItemEntity>): Long {
         val invoiceId = insertInvoice(invoice)
@@ -76,6 +85,9 @@ interface ProductDao {
 
     @Delete
     suspend fun deleteProduct(product: ProductCatalogEntity)
+
+    @Query("DELETE FROM products_catalog")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -91,5 +103,8 @@ interface CustomerReceiptDao {
 
     @Query("DELETE FROM customer_receipts WHERE receiptId = :receiptId")
     suspend fun deleteReceipt(receiptId: Long)
+
+    @Query("DELETE FROM customer_receipts")
+    suspend fun clearAll()
 }
 

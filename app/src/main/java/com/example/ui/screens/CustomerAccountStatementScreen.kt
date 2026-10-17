@@ -896,8 +896,8 @@ fun CustomerAccountStatementScreen(
                                             .fillMaxWidth()
                                             .padding(top = 4.dp)
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0xFFF1F5F9))
-                                            .border(0.6.dp, Color(0xFFCBD5E1), RoundedCornerShape(6.dp))
+                                            .background(NeuInsetBg)
+                                            .border(0.6.dp, NeuInsetBorder, RoundedCornerShape(6.dp))
                                             .padding(6.dp)
                                     ) {
                                         if (tx.isDebit && tx.invoiceWithItems != null) {
@@ -931,7 +931,7 @@ fun CustomerAccountStatementScreen(
                                                     Text("${formatter.format(itm.totalAmount)} ${config.currencySymbol}", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary, modifier = Modifier.width(55.dp), textAlign = TextAlign.End)
                                                 }
                                                 if (i < inv.items.lastIndex) {
-                                                    HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 0.5.dp)
+                                                    HorizontalDivider(color = NeuInsetBorder, thickness = 0.5.dp)
                                                 }
                                             }
 
