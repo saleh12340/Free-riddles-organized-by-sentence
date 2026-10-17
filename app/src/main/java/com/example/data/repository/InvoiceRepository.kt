@@ -1,6 +1,7 @@
 package com.example.data.repository
 
 import com.example.data.local.*
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 
 class InvoiceRepository(private val db: AppDatabase) {
@@ -8,6 +9,32 @@ class InvoiceRepository(private val db: AppDatabase) {
     val storeConfig: Flow<StoreConfigEntity?> = db.storeConfigDao().getStoreConfig()
     val allInvoices: Flow<List<InvoiceWithItems>> = db.invoiceDao().getAllInvoicesWithItems()
     val allProducts: Flow<List<ProductCatalogEntity>> = db.productDao().getAllProducts()
+    val allReceipts: Flow<List<CustomerReceiptEntity>> = db.customerReceiptDao().getAllReceipts()
+
+    /** Replaces all backup-managed tables atomically. Duplicate invoice numbers and product names are preserved. */
+    suspend fun replaceAllData(
+        config: StoreConfigEntity,
+        products: List<ProductCatalogEntity>,
+        invoices: List<Pair<InvoiceEntity, List<InvoiceItemEntity>>>,
+        receipts: List<CustomerReceiptEntity> = emptyList()
+    ) {
+        db.withTransaction {
+            db.invoiceDao().clearAllItems()
+            db.invoiceDao().clearAllInvoices()
+            db.productDao().clearAll()
+            db.customerReceiptDao().clearAll()
+            db.storeConfigDao().clearAll()
+            db.storeConfigDao().insertOrUpdate(config)
+            products.forEach { db.productDao().insertProduct(it) }
+            invoices.forEach { (invoice, items) ->
+                val id = db.invoiceDao().insertInvoice(invoice.copy(invoiceId = 0))
+                if (items.isNotEmpty()) {
+                    db.invoiceDao().insertInvoiceItems(items.map { it.copy(itemId = 0, invoiceId = id) })
+                }
+            }
+            receipts.forEach { db.customerReceiptDao().insertReceipt(it.copy(receiptId = 0)) }
+        }
+    }
 
     fun searchInvoices(query: String): Flow<List<InvoiceWithItems>> =
         db.invoiceDao().searchInvoices(query)
