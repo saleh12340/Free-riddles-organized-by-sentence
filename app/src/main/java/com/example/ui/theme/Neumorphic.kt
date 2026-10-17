@@ -26,24 +26,24 @@ import androidx.compose.ui.unit.sp
 // ============================================================================
 // NEUMORPHIC COLOR PALETTE (From user's Soft UI screenshot: #0072ff, rgba(163,177,198,.65), etc.)
 // ============================================================================
-val NeuBackground = Color.White        // Pure white background for all screens
-val NeuSurface = Color(0xFFF1F5F9)           // Subtle soft light gray card background (Slate 100)
-val NeuSurfaceRaised = Color(0xFFE2E8F0)     // Clean light elevated surface / header (Slate 200)
-val NeuDarkShadow = Color(0xFFCBD5E1)        // Soft light shadow
-val NeuLightHighlight = Color(0xFFFFFFFF)    // Highlight border
-val NeuInsetBg = Color(0xFFF8FAFC)           // Clean light input background
-val NeuInsetBorder = Color(0xFFCBD5E1)       // Sunken input border
+val NeuBackground = Color(0xFF0B1220)        // Pure white background for all screens
+val NeuSurface = Color(0xFF142238)           // Subtle soft light gray card background (Slate 100)
+val NeuSurfaceRaised = Color(0xFF1D304B)     // Clean light elevated surface / header (Slate 200)
+val NeuDarkShadow = Color(0xFF020617)        // Soft light shadow
+val NeuLightHighlight = Color(0xFF334862)    // Highlight border
+val NeuInsetBg = Color(0xFF0D192A)           // Clean light input background
+val NeuInsetBorder = Color(0xFF3B506B)       // Sunken input border
 
-val NeuAccentBlue = Color(0xFF2563EB)        // Professional clean blue (Blue 600)
-val NeuAccentBlueHover = Color(0xFF1D4ED8)   // Deep hover state
-val NeuAccentBlueGlow = Color(0x332563EB)    // Soft blue glow
+val NeuAccentBlue = Color(0xFF4F8CFF)        // Professional clean blue (Blue 600)
+val NeuAccentBlueHover = Color(0xFF78A8FF)   // Deep hover state
+val NeuAccentBlueGlow = Color(0x334F8CFF)    // Soft blue glow
 
-val NeuTextPrimary = Color(0xFF0F172A)       // Dark slate primary text (Slate 900)
-val NeuTextSecondary = Color(0xFF475569)     // Slate 600 secondary text
-val NeuTextMuted = Color(0xFF64748B)         // Slate 500 muted text
+val NeuTextPrimary = Color(0xFFF1F5F9)       // Dark slate primary text (Slate 900)
+val NeuTextSecondary = Color(0xFFCBD5E1)     // Slate 600 secondary text
+val NeuTextMuted = Color(0xFF94A3B8)         // Slate 500 muted text
 
-val NeuSuccess = Color(0xFF10B981)           // Soft emerald
-val NeuError = Color(0xFFEF4444)             // Soft crimson alert
+val NeuSuccess = Color(0xFF34D399)           // Soft emerald
+val NeuError = Color(0xFFFB7185)             // Soft crimson alert
 
 // ============================================================================
 // NEUMORPHIC REUSABLE COMPOSABLES
