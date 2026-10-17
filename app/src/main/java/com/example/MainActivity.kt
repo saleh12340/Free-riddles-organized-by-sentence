@@ -36,19 +36,13 @@ import com.example.ui.viewmodels.InvoiceViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.PointOfSale
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.AddShoppingCart
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector) {
-    HOME("الرئيسية", AppIcons.Home, AppIcons.Home),
+    HOME("الرئيسية", AppIcons.Store, AppIcons.Store),
     NEW_INVOICE("فاتورة", AppIcons.Receipt, AppIcons.Receipt),
     HISTORY("السجل", AppIcons.History, AppIcons.History),
     CUSTOMERS("العملاء", Icons.Default.Person, Icons.Default.Person),
@@ -121,11 +115,11 @@ private fun HomeDashboardScreen(
         Text("العمليات الرئيسية", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             DashboardAction("فاتورة جديدة", "بيع وتسجيل الواصل", AppIcons.Receipt, Color(0xFF2563EB), onNewInvoice, Modifier.weight(1f))
-            DashboardAction("حسابات العملاء", "الأرصدة والحركات", Icons.Default.People, Color(0xFF0F9D78), onCustomers, Modifier.weight(1f))
+            DashboardAction("حسابات العملاء", "الأرصدة والحركات", AppIcons.Person, Color(0xFF0F9D78), onCustomers, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             DashboardAction("سجل الفواتير", "عرض وتعديل ومشاركة", AppIcons.History, Color(0xFF7C3AED), onHistory, Modifier.weight(1f))
-            DashboardAction("الأصناف والمخزون", "الأسعار والبحث", Icons.Default.Inventory2, Color(0xFFB45309), onProducts, Modifier.weight(1f))
+            DashboardAction("الأصناف والمخزون", "الأسعار والبحث", AppIcons.Category, Color(0xFFB45309), onProducts, Modifier.weight(1f))
         }
         Text("الأدوات والإعدادات", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
