@@ -36,10 +36,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 
 enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector) {
-    NEW_INVOICE("جديدة", AppIcons.Receipt, AppIcons.Receipt),
+    CUSTOMERS("العملاء", Icons.Default.Person, Icons.Default.Person),
+    NEW_INVOICE("فاتورة", AppIcons.Receipt, AppIcons.Receipt),
     HISTORY("السجل", AppIcons.History, AppIcons.History),
     PRODUCTS("الأصناف", AppIcons.Category, AppIcons.Category),
-    CUSTOMERS("العملاء", Icons.Default.Person, Icons.Default.Person),
     PRINTER("الطابعة", AppIcons.Print, AppIcons.Print),
     SETTINGS("المتجر", Icons.Default.Settings, Icons.Default.Settings)
 }
@@ -66,15 +66,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainAppContent(viewModel: InvoiceViewModel) {
     val context = LocalContext.current
-    var currentTab by remember { mutableStateOf(NavigationScreen.NEW_INVOICE) }
+    var currentTab by remember { mutableStateOf(NavigationScreen.CUSTOMERS) }
     val uiMessage by viewModel.uiEventMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showExitDialog by remember { mutableStateOf(false) }
 
     // Intercept hardware/system back button
     BackHandler {
-        if (currentTab != NavigationScreen.NEW_INVOICE) {
-            currentTab = NavigationScreen.NEW_INVOICE
+        if (currentTab != NavigationScreen.CUSTOMERS) {
+            currentTab = NavigationScreen.CUSTOMERS
         } else {
             showExitDialog = true
         }
