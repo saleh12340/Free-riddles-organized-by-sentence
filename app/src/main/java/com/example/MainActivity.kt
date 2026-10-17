@@ -126,6 +126,57 @@ private fun HomeDashboardScreen(
             DashboardAction("إعداد الطابعة", "حرارية 58 / 80 مم", Icons.Default.Print, Color(0xFF475569), onPrinter, Modifier.weight(1f))
             DashboardAction("إعدادات المتجر", "النسخ الاحتياطي والبيانات", Icons.Default.Settings, Color(0xFFBE123C), onSettings, Modifier.weight(1f))
         }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("أحدث الفواتير", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onHistory, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
+                Text("عرض السجل", color = NeuAccentBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        val latestInvoices = invoices.sortedByDescending { it.invoice.createdAtTimestamp }.take(3)
+        if (latestInvoices.isEmpty()) {
+            NeuCard(
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = NeuSurface,
+                elevation = 1.dp,
+                contentPadding = PaddingValues(12.dp)
+            ) {
+                Text("لا توجد فواتير بعد", color = NeuTextSecondary, fontSize = 13.sp)
+            }
+        } else {
+            latestInvoices.forEachIndexed { index, entry ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(NeuSurface)
+                        .clickable(onClick = onHistory)
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF1D3B63)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(AppIcons.Receipt, contentDescription = null, tint = Color(0xFF78A8FF), modifier = Modifier.size(19.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("فاتورة #" + entry.invoice.invoiceNumber, color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(entry.invoice.customerName.ifBlank { "عميل نقدي" }, color = NeuTextSecondary, fontSize = 11.sp, maxLines = 1)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(money.format(entry.invoice.grandTotal), color = NeuTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(entry.invoice.paymentType, color = if (entry.invoice.paymentType == "أجل") Color(0xFFFBBF24) else NeuSuccess, fontSize = 10.sp)
+                    }
+                }
+                if (index < latestInvoices.lastIndex) Spacer(Modifier.height(5.dp))
+            }
+        }
         Spacer(Modifier.height(8.dp))
     }
 }
