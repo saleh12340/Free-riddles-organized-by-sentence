@@ -195,7 +195,32 @@ class BackupManager(
                 invoices.add(invoice to items)
             }
 
-            val receiptsArray = root.optJSONArray("customerReceipts")\n            val receipts = if (receiptsArray == null) {\n                // Legacy backups do not contain receipts; keep current receipt history instead of deleting it.\n                repository.allReceipts.first()\n            } else ArrayList<CustomerReceiptEntity>(receiptsArray.length()).also { parsed ->\n                for (i in 0 until receiptsArray.length()) {\n                    val receipt = receiptsArray.getJSONObject(i)\n                    parsed.add(CustomerReceiptEntity(\n                        receiptId = 0,\n                        customerName = receipt.optString("customerName", ""),\n                        amount = receipt.optDouble("amount", 0.0),\n                        dateString = receipt.optString("dateString", ""),\n                        paymentType = receipt.optString("paymentType", ""),\n                        notes = receipt.optString("notes", ""),\n                        createdAtTimestamp = receipt.optLong("createdAtTimestamp", System.currentTimeMillis() + i)\n                    ))\n                }\n            }\n
+            val receiptsArray = root.optJSONArray("customerReceipts")
+            val receipts = if (receiptsArray == null) {
+                // Legacy backups do not contain receipts; keep current receipt history instead of deleting it.
+                repository.allReceipts.first()
+            } else {
+                ArrayList<CustomerReceiptEntity>(receiptsArray.length()).also { parsed ->
+                    for (i in 0 until receiptsArray.length()) {
+                        val receipt = receiptsArray.getJSONObject(i)
+                        parsed.add(
+                            CustomerReceiptEntity(
+                                receiptId = 0,
+                                customerName = receipt.optString("customerName", ""),
+                                amount = receipt.optDouble("amount", 0.0),
+                                dateString = receipt.optString("dateString", ""),
+                                paymentType = receipt.optString("paymentType", ""),
+                                notes = receipt.optString("notes", ""),
+                                createdAtTimestamp = receipt.optLong(
+                                    "createdAtTimestamp",
+                                    System.currentTimeMillis() + i
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+
             val safetyJson = createBackupJson()
             val backupDir = File(context.filesDir, "restore-safety-backups")
             if (!backupDir.exists() && !backupDir.mkdirs()) {
