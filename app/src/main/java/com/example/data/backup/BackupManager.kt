@@ -95,6 +95,13 @@ class BackupManager(
         root.toString(2)
     }
 
+    suspend fun readLatestSafetyBackupJson(): String? = withContext(Dispatchers.IO) {
+        val dir = File(context.filesDir, "restore-safety-backups")
+        val latest = dir.listFiles { file -> file.isFile && file.name.startsWith("before_restore_") && file.extension == "json" }
+            ?.maxByOrNull { it.lastModified() } ?: return@withContext null
+        latest.readText(Charsets.UTF_8).takeIf { it.isNotBlank() }
+    }
+
     /** Validate the whole file first, save a restorable safety copy, then replace tables atomically. */
     suspend fun restoreFromJson(jsonString: String): BackupRestoreResult = withContext(Dispatchers.IO) {
         try {
