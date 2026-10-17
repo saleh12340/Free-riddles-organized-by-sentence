@@ -364,7 +364,8 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onProducts = { currentTab = NavigationScreen.PRODUCTS },
                     onPrinter = { currentTab = NavigationScreen.PRINTER },
                     onSettings = { currentTab = NavigationScreen.SETTINGS }
-                )\n                NavigationScreen.NEW_INVOICE -> NewInvoiceScreen(
+                )
+                NavigationScreen.NEW_INVOICE -> NewInvoiceScreen(
                     viewModel = viewModel,
                     onNavigateToPrinterSetup = { currentTab = NavigationScreen.PRINTER }
                 )
