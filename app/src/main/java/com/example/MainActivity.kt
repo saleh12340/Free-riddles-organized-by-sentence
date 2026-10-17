@@ -123,7 +123,7 @@ private fun HomeDashboardScreen(
         }
         Text("الأدوات والإعدادات", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardAction("إعداد الطابعة", "حرارية 58 / 80 مم", Icons.Default.Print, Color(0xFF475569), onPrinter, Modifier.weight(1f))
+            DashboardAction("إعداد الطابعة", "حرارية 58 / 80 مم", AppIcons.Print, Color(0xFF475569), onPrinter, Modifier.weight(1f))
             DashboardAction("إعدادات المتجر", "النسخ الاحتياطي والبيانات", Icons.Default.Settings, Color(0xFFBE123C), onSettings, Modifier.weight(1f))
         }
 
