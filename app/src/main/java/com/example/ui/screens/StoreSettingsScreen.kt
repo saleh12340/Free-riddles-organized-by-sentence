@@ -57,6 +57,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
     // Dialog & file picker states for Backup / Restore
     var backupJsonToExport by remember { mutableStateOf<String?>(null) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showSafetyRestoreConfirm by remember { mutableStateOf(false) }
     var restoreJsonData by remember { mutableStateOf<String?>(null) }
     var isOperatingBackup by remember { mutableStateOf(false) }
 
@@ -242,6 +243,21 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("حفظ كملف", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                NeuButton(
+                    onClick = { showSafetyRestoreConfirm = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(34.dp),
+                    shape = RoundedCornerShape(7.dp),
+                    isPrimary = false
+                ) {
+                    Icon(AppIcons.Restore, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuAccentBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("استرجاع نسخة الأمان السابقة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -518,6 +534,49 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
 
             Spacer(modifier = Modifier.height(70.dp))
         }
+    }
+
+    if (showSafetyRestoreConfirm) {
+        AlertDialog(
+            onDismissRequest = { showSafetyRestoreConfirm = false },
+            containerColor = NeuSurface,
+            title = { Text("استرجاع نسخة الأمان", fontWeight = FontWeight.Bold, color = NeuTextPrimary) },
+            text = {
+                Text(
+                    "سيتم استبدال البيانات الحالية بآخر نسخة أمان محفوظة قبل عملية استعادة سابقة. وسيُحفظ ملف أمان جديد من البيانات الحالية قبل الاستبدال. هل تريد المتابعة؟",
+                    color = NeuTextSecondary
+                )
+            },
+            confirmButton = {
+                NeuButton(
+                    onClick = {
+                        showSafetyRestoreConfirm = false
+                        isOperatingBackup = true
+                        viewModel.restoreLatestSafetyBackup { result ->
+                            isOperatingBackup = false
+                            when (result) {
+                                is BackupRestoreResult.Success -> Toast.makeText(
+                                    context,
+                                    "تم استرجاع نسخة الأمان: ${result.invoicesCount} فاتورة و ${result.productsCount} صنف",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                is BackupRestoreResult.Error -> Toast.makeText(
+                                    context,
+                                    "تعذر الاسترجاع: ${result.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    },
+                    isPrimary = true
+                ) { Text("استرجاع الآن", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                NeuButton(onClick = { showSafetyRestoreConfirm = false }, isPrimary = false) {
+                    Text("إلغاء", color = NeuTextPrimary, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 
     // Restore Confirmation Dialog
