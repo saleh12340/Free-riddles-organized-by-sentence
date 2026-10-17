@@ -26,12 +26,12 @@ import androidx.compose.ui.unit.sp
 // ============================================================================
 // NEUMORPHIC COLOR PALETTE (From user's Soft UI screenshot: #0072ff, rgba(163,177,198,.65), etc.)
 // ============================================================================
-val NeuBackground = Color(0xFF0B1220)        // Pure white background for all screens
-val NeuSurface = Color(0xFF142238)           // Subtle soft light gray card background (Slate 100)
-val NeuSurfaceRaised = Color(0xFF1D304B)     // Clean light elevated surface / header (Slate 200)
-val NeuDarkShadow = Color(0xFF020617)        // Soft light shadow
+val NeuBackground = Color(0xFF0B1220)        // Deep navy app canvas with high-contrast surfaces
+val NeuSurface = Color(0xFF142238)           // Dark raised card surface
+val NeuSurfaceRaised = Color(0xFF1D304B)     // Elevated navy surface
+val NeuDarkShadow = Color(0xFF020617)        // Deep shadow
 val NeuLightHighlight = Color(0xFF334862)    // Highlight border
-val NeuInsetBg = Color(0xFF0D192A)           // Clean light input background
+val NeuInsetBg = Color(0xFF0D192A)           // Recessed dark input background
 val NeuInsetBorder = Color(0xFF3B506B)       // Sunken input border
 
 val NeuAccentBlue = Color(0xFF4F8CFF)        // Professional clean blue (Blue 600)
