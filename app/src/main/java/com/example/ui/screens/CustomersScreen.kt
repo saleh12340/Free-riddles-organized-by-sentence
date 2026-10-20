@@ -535,6 +535,8 @@ fun CustomersScreen(
         }
     }
 
+}
+
 private data class CustomerSummary(
     val name: String,
     val invoicesCount: Int,
