@@ -54,7 +54,8 @@ fun CustomersScreen(
     viewModel: InvoiceViewModel,
     onNavigateToCustomerStatement: ((String) -> Unit)? = null,
     onEditInvoice: ((InvoiceWithItems) -> Unit)? = null,
-    onNewInvoiceForCustomer: ((String) -> Unit)? = null
+    onNewInvoiceForCustomer: ((String) -> Unit)? = null,
+    initialCustomerName: String? = null
 ) {
     val context = LocalContext.current
     val invoices by viewModel.allInvoices.collectAsState()
@@ -64,6 +65,9 @@ fun CustomersScreen(
     var query by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(CustomerFilterType.ALL) }
     var selectedCustomer by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(initialCustomerName) {
+        if (!initialCustomerName.isNullOrBlank()) selectedCustomer = initialCustomerName
+    }
     var newCustomerName by remember { mutableStateOf("") }
     var customerPhoneInput by remember { mutableStateOf("") }
     var initialBalanceStr by remember { mutableStateOf("") }
