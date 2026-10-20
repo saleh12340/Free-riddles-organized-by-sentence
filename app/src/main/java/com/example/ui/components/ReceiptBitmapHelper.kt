@@ -374,7 +374,8 @@ object ReceiptBitmapHelper {
         // Header
         canvas.drawText(storeConfig.storeNameArabic.ifEmpty { "متجرنا" }, widthPx / 2f, currentY + (17f * scale), titlePaint)
         currentY += 21f * scale
-        canvas.drawText("سند قبض مالي #${receipt.receiptId.toString().toEnglishDigits()}", widthPx / 2f, currentY + (10f * scale), subPaint)
+        val voucherTitle = if (receipt.isDebit) "سند قيد مالي (على العميل)" else "سند قبض مالي (للعميل)"
+        canvas.drawText("$voucherTitle #${receipt.receiptId.toString().toEnglishDigits()}", widthPx / 2f, currentY + (10f * scale), subPaint)
         currentY += 15f * scale
 
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, solidLinePaint)
@@ -385,13 +386,15 @@ object ReceiptBitmapHelper {
         canvas.drawText("التاريخ: ${receipt.dateString.toEnglishDigits()}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
         currentY += 16f * scale
 
-        canvas.drawText("استلمنا من الأخ: ${receipt.customerName}", widthPx - padding, currentY + (13f * scale), labelBoldPaint)
+        val partyLabel = if (receipt.isDebit) "قيد على حساب: ${receipt.customerName}" else "استلمنا من الأخ: ${receipt.customerName}"
+        canvas.drawText(partyLabel, widthPx - padding, currentY + (13f * scale), labelBoldPaint)
         currentY += 17f * scale
 
         // Amount Box (Clear border, NO black background fill)
         val boxH = 30f * scale
         canvas.drawRect(padding, currentY, widthPx - padding, currentY + boxH, borderPaint)
-        val amtStr = "مبلغ وقدره: ${formatter.format(receipt.amount).toEnglishDigits()} ${storeConfig.currencySymbol}"
+        val amtPrefix = if (receipt.isDebit) "مبلغ مقيد عليه" else "مبلغ مقبوض له"
+        val amtStr = "$amtPrefix: ${formatter.format(receipt.amount).toEnglishDigits()} ${storeConfig.currencySymbol}"
         canvas.drawText(amtStr, widthPx / 2f, currentY + (20f * scale), amountBigPaint)
         currentY += boxH + (8f * scale)
 
@@ -410,9 +413,11 @@ object ReceiptBitmapHelper {
 
         // Signatures
         footerPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("المستلم / الصندوق: .........", widthPx - padding, currentY + (10f * scale), footerPaint)
+        val rightSig = if (receipt.isDebit) "المحاسب: ........." else "المستلم / الصندوق: ........."
+        canvas.drawText(rightSig, widthPx - padding, currentY + (10f * scale), footerPaint)
         footerPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("المسدد: .........", padding, currentY + (10f * scale), footerPaint)
+        val leftSig = if (receipt.isDebit) "المستلم / العميل: ........." else "المسدد: ........."
+        canvas.drawText(leftSig, padding, currentY + (10f * scale), footerPaint)
 
         return bitmap
     }

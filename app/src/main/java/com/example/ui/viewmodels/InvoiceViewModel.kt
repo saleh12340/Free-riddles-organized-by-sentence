@@ -1,6 +1,7 @@
 package com.example.ui.viewmodels
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.getValue
@@ -109,6 +110,25 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     var paymentType by mutableStateOf("نقداً") // "نقداً" or "أجل"
     var notes by mutableStateOf("")
     var receivedAmountStr by mutableStateOf("")
+
+    fun getCustomerPhone(customerName: String): String {
+        val clean = customerName.trim()
+        if (clean.isBlank()) return ""
+        val prefs = getApplication<Application>().getSharedPreferences("customer_meta", Context.MODE_PRIVATE)
+        val saved = prefs.getString("phone_$clean", "") ?: ""
+        if (saved.isNotBlank()) return saved
+        // Try extracting phone if embedded in customer name e.g. "أحمد - 772437314"
+        val regex = "(\\+?[0-9]{7,14})".toRegex()
+        val match = regex.find(clean)
+        return match?.value ?: ""
+    }
+
+    fun saveCustomerPhone(customerName: String, phone: String) {
+        val clean = customerName.trim()
+        if (clean.isBlank()) return
+        val prefs = getApplication<Application>().getSharedPreferences("customer_meta", Context.MODE_PRIVATE)
+        prefs.edit().putString("phone_$clean", phone.trim()).apply()
+    }
 
     // Single-column expanding rows: Starts with DEFAULT_ROW_COUNT
     val receiptRows = mutableStateListOf<ReceiptRow>()
@@ -849,7 +869,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addCustomerReceipt(customerName: String, amount: Double, paymentType: String, notes: String) {
+    fun addCustomerReceipt(
+        customerName: String,
+        amount: Double,
+        paymentType: String,
+        notes: String,
+        isDebit: Boolean = false
+    ) {
         viewModelScope.launch {
             val dateStr = SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date())
             db.customerReceiptDao().insertReceipt(
@@ -858,10 +884,12 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                     amount = amount,
                     dateString = dateStr,
                     paymentType = paymentType,
-                    notes = notes
+                    notes = notes,
+                    isDebit = isDebit
                 )
             )
-            _uiEventMessage.value = "تم حفظ سند القبض/التسديد بمبلغ $amount بنجاح"
+            val actionLabel = if (isDebit) "قيد دين (عليه)" else "سند قبض/تسديد (له)"
+            _uiEventMessage.value = "تم تسجيل $actionLabel بمبلغ $amount بنجاح"
         }
     }
 

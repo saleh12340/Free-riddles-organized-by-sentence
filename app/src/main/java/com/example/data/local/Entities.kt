@@ -95,7 +95,8 @@ data class CustomerReceiptEntity(
     val customerName: String,
     val amount: Double,
     val dateString: String,
-    val paymentType: String, // e.g. "سند قبض", "تسديد جزئي للفاتورة", "تسديد حساب العميل"
+    val paymentType: String, // e.g. "سند قبض", "تسديد جزئي للفاتورة", "تسديد حساب العميل", "قيد دين"
     val notes: String = "",
-    val createdAtTimestamp: Long = System.currentTimeMillis()
+    val createdAtTimestamp: Long = System.currentTimeMillis(),
+    val isDebit: Boolean = false
 )

@@ -390,6 +390,12 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onEditInvoice = { inv ->
                         viewModel.loadInvoiceForEditing(inv)
                         currentTab = NavigationScreen.NEW_INVOICE
+                    },
+                    onNewInvoiceForCustomer = { customerName ->
+                        viewModel.resetForm()
+                        viewModel.customerName = customerName
+                        viewModel.paymentType = "أجل"
+                        currentTab = NavigationScreen.NEW_INVOICE
                     }
                 )
                 NavigationScreen.REPORTS -> FinancialReportsScreen(viewModel = viewModel)

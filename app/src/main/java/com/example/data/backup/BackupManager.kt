@@ -89,6 +89,7 @@ class BackupManager(
                     put("paymentType", receipt.paymentType)
                     put("notes", receipt.notes)
                     put("createdAtTimestamp", receipt.createdAtTimestamp)
+                    put("isDebit", receipt.isDebit)
                 })
             }
         })
@@ -214,7 +215,8 @@ class BackupManager(
                                 createdAtTimestamp = receipt.optLong(
                                     "createdAtTimestamp",
                                     System.currentTimeMillis() + i
-                                )
+                                ),
+                                isDebit = receipt.optBoolean("isDebit", false)
                             )
                         )
                     }
