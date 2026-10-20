@@ -62,13 +62,25 @@ private fun HomeDashboardScreen(
     onHistory: () -> Unit,
     onProducts: () -> Unit,
     onPrinter: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onOpenCustomer: (String) -> Unit
 ) {
     val invoices by viewModel.allInvoices.collectAsState()
     val products by viewModel.allProducts.collectAsState()
     val config by viewModel.storeConfig.collectAsState()
     val receipts by viewModel.allReceipts.collectAsState()
     val money = remember { DecimalFormat("#,##0.##") }
+    val customerRows = remember(invoices, receipts) {
+        val names = (invoices.map { it.invoice.customerName.trim() } + receipts.map { it.customerName.trim() })
+            .filter { it.isNotBlank() && it != "عميل نقدي" }.distinct()
+        names.map { name ->
+            val customerInvoices = invoices.filter { it.invoice.customerName.trim() == name }
+            val customerReceipts = receipts.filter { it.customerName.trim() == name }
+            val debits = customerReceipts.filter { it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") }.sumOf { it.amount }
+            val credits = customerReceipts.filterNot { it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") }.sumOf { it.amount }
+            Triple(name, customerInvoices.size + customerReceipts.size, customerInvoices.sumOf { it.invoice.grandTotal } + debits - credits)
+        }.sortedByDescending { it.third }
+    }
     val today = remember { SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date()) }
     val todayInvoices = invoices.filter { it.invoice.dateString == today }
     val todaySales = todayInvoices.sumOf { it.invoice.grandTotal }
@@ -79,29 +91,29 @@ private fun HomeDashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 7.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         NeuCard(
             modifier = Modifier.fillMaxWidth(),
             backgroundColor = Color(0xFF1E3A8A),
-            shape = RoundedCornerShape(18.dp),
-            elevation = 3.dp,
-            contentPadding = PaddingValues(16.dp)
+            shape = RoundedCornerShape(12.dp),
+            elevation = 2.dp,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 7.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(
-                    modifier = Modifier.size(50.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF2563EB)),
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(Color(0xFF2563EB)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(AppIcons.Category, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    Icon(AppIcons.Category, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text((config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" }, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("إدارة المبيعات والفواتير", fontSize = 13.sp, color = Color(0xFFDBEAFE))
+                    Text((config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" }, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
+                    Text("إدارة المبيعات والفواتير", fontSize = 9.sp, color = Color(0xFFDBEAFE), maxLines = 1)
                 }
             }
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(5.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DashboardMetric("مبيعات اليوم", money.format(todaySales), config?.currencySymbol ?: "ر.ي", Modifier.weight(1f))
                 DashboardMetric("الواصل اليوم", money.format(todayReceived), config?.currencySymbol ?: "ر.ي", Modifier.weight(1f))
@@ -114,7 +126,32 @@ private fun HomeDashboardScreen(
             DashboardSmallMetric("الأصناف", products.size.toString(), Modifier.weight(1f))
         }
 
-        Text("العمليات الرئيسية", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("العملاء وحساباتهم", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+            TextButton(onClick = onCustomers, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("كل العملاء", fontSize = 10.sp) }
+        }
+        if (customerRows.isEmpty()) {
+            Text("ستظهر حسابات العملاء هنا بعد تسجيل أول حركة", color = NeuTextSecondary, fontSize = 10.sp)
+        } else {
+            customerRows.take(8).forEach { item ->
+                val (name, count, balance) = item
+                val owing = balance > 0.05
+                val tint = if (owing) Color(0xFFB91C1C) else Color(0xFF047857)
+                val rowBg = if (owing) Color(0xFFFFF1F2) else Color(0xFFECFDF5)
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(5.dp)).background(rowBg)
+                        .border(1.dp, if (owing) Color(0xFFFCA5A5) else Color(0xFF86EFAC), RoundedCornerShape(5.dp))
+                        .clickable { onOpenCustomer(name) }.padding(horizontal = 7.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(name, modifier = Modifier.weight(1.2f), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text("$count حركة", fontSize = 9.sp, color = NeuTextSecondary, maxLines = 1)
+                    Text(if (kotlin.math.abs(balance) < 0.05) "خالص" else "${money.format(kotlin.math.abs(balance))} ${if (owing) "عليه" else "له"}", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1)
+                }
+            }
+        }
+        Text("العمليات الرئيسية", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             DashboardAction("فاتورة جديدة", "بيع وتسجيل الواصل", AppIcons.Receipt, NeuAccentBlue, onNewInvoice, Modifier.weight(1f))
             DashboardAction("حسابات العملاء", "الأرصدة والحركات", AppIcons.Person, NeuAccentBlue, onCustomers, Modifier.weight(1f))
@@ -262,6 +299,7 @@ class MainActivity : ComponentActivity() {
 fun MainAppContent(viewModel: InvoiceViewModel) {
     val context = LocalContext.current
     var currentTab by remember { mutableStateOf(NavigationScreen.HOME) }
+    var customerToOpen by remember { mutableStateOf<String?>(null) }
     val bottomScreens = listOf(
         NavigationScreen.HOME,
         NavigationScreen.NEW_INVOICE,
@@ -379,7 +417,11 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onHistory = { currentTab = NavigationScreen.HISTORY },
                     onProducts = { currentTab = NavigationScreen.PRODUCTS },
                     onPrinter = { currentTab = NavigationScreen.PRINTER },
-                    onSettings = { currentTab = NavigationScreen.SETTINGS }
+                    onSettings = { currentTab = NavigationScreen.SETTINGS },
+                    onOpenCustomer = { name ->
+                        customerToOpen = name
+                        currentTab = NavigationScreen.CUSTOMERS
+                    }
                 )
                 NavigationScreen.NEW_INVOICE -> NewInvoiceScreen(
                     viewModel = viewModel,
@@ -387,6 +429,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                 )
                 NavigationScreen.CUSTOMERS -> CustomersScreen(
                     viewModel = viewModel,
+                    initialCustomerName = customerToOpen,
                     onEditInvoice = { inv ->
                         viewModel.loadInvoiceForEditing(inv)
                         currentTab = NavigationScreen.NEW_INVOICE
