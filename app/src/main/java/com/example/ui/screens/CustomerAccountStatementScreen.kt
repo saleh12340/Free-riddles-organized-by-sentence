@@ -888,8 +888,8 @@ fun CustomerAccountStatementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(horizontal = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .padding(horizontal = 5.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     items(transactionsWithBalance, key = { "${it.first.rawType}_${it.first.id}" }) { (tx, runBal) ->
                         val itemKey = "${tx.rawType}_${tx.id}"
