@@ -84,6 +84,19 @@ fun CustomerAccountStatementScreen(
     }
     var showEditPhoneDialog by remember { mutableStateOf(false) }
 
+    // Normalize Yemeni mobile numbers for direct WhatsApp account linking.
+    fun whatsappPhone(raw: String): String {
+        var digits = raw.filter { it.isDigit() }
+        if (digits.startsWith("00")) digits = digits.drop(2)
+        return when {
+            digits.startsWith("967") -> digits
+            digits.length == 9 && digits.startsWith("7") -> "967${digits}"
+            digits.length == 10 && digits.startsWith("07") -> "967${digits.drop(1)}"
+            digits.startsWith("0") && digits.length > 9 -> "967${digits.drop(1)}"
+            else -> digits
+        }
+    }
+
     val customerInvoices = remember(invoices, customerName) {
         invoices.filter { it.invoice.customerName.trim() == customerName.trim() }
     }
@@ -201,8 +214,8 @@ fun CustomerAccountStatementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     // Top Bar: Back button + Title + Quick Actions
                     Row(
@@ -347,7 +360,7 @@ fun CustomerAccountStatementScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.clickable {
                                 if (customerPhone.isNotBlank()) {
-                                    val cleanPhone = customerPhone.replace(Regex("[^0-9+]"), "")
+                                    val cleanPhone = whatsappPhone(customerPhone)
                                     val textMsg = "مرحباً يا $customerName،\nكشف حسابك لدى ${config.storeNameArabic.ifEmpty { "متجرنا" }}:\n" +
                                             "• إجمالي المطلوب (عليه): ${formatter.format(totalDebits)} ${config.currencySymbol}\n" +
                                             "• إجمالي المسدد (له): ${formatter.format(totalCredits)} ${config.currencySymbol}\n" +
@@ -432,8 +445,8 @@ fun CustomerAccountStatementScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = Color.White,
                 border = BorderStroke(
                     1.dp,
@@ -444,8 +457,8 @@ fun CustomerAccountStatementScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .padding(horizontal = 7.dp, vertical = 5.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // Row 1: Direction Segmented Switch (له vs عليه) + Quick "New Invoice" button
                     Row(
@@ -885,11 +898,11 @@ fun CustomerAccountStatementScreen(
 
                         val isInvoice = tx.rawType == "invoice"
 
-                        val cardBg = if (tx.isDebit) Color(0xFFFFF7F7) else Color(0xFFF0FDF4)
+                        val cardBg = if (tx.isDebit) Color(0xFFFFF1F2) else Color(0xFFECFDF3)
                         val borderColor = when {
                             isSelected -> NavyPrimary
-                            tx.isDebit -> Color(0xFFFECDD3)
-                            else -> Color(0xFFBBF7D0)
+                            tx.isDebit -> Color(0xFFEF4444)
+                            else -> Color(0xFF22C55E)
                         }
 
                         Surface(
@@ -902,7 +915,7 @@ fun CustomerAccountStatementScreen(
                                         if (isExpanded) expandedTxKeys.remove(itemKey) else expandedTxKeys.add(itemKey)
                                     }
                                 },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(5.dp),
                             color = cardBg,
                             border = BorderStroke(1.dp, borderColor),
                             shadowElevation = if (isSelected) 2.dp else 0.5.dp
@@ -910,18 +923,18 @@ fun CustomerAccountStatementScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 7.dp)
+                                    .padding(horizontal = 6.dp, vertical = 3.dp)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Right: Date & Time, Amount, Details
+                                    // Right-to-left ruler row: date/time, amount, details; balance stays at far left.
                                     Row(
                                         modifier = Modifier.weight(1f),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                                     ) {
                                         if (isMultiSelectMode) {
                                             Checkbox(
