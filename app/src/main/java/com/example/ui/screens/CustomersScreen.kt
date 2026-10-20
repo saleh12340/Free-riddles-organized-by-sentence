@@ -64,7 +64,11 @@ fun CustomersScreen(
     var query by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(CustomerFilterType.ALL) }
     var selectedCustomer by remember { mutableStateOf<String?>(null) }
-    var showAddCustomerDialog by remember { mutableStateOf(false) }
+    var newCustomerName by remember { mutableStateOf("") }
+    var customerPhoneInput by remember { mutableStateOf("") }
+    var initialBalanceStr by remember { mutableStateOf("") }
+    var initialBalanceType by remember { mutableStateOf("مدين (عليه دين)") }
+    var notes by remember { mutableStateOf("") }
 
     // When customer is selected, open dedicated statement screen
     selectedCustomer?.let { customerName ->
@@ -131,36 +135,7 @@ fun CustomersScreen(
     }
 
     Scaffold(
-        containerColor = NeuBackground,
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddCustomerDialog = true },
-                containerColor = NavyPrimary,
-                contentColor = Color.White,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-                modifier = Modifier.padding(bottom = 60.dp, end = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "إضافة عميل جديد",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Text(
-                        text = "عميل جديد",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                }
-            }
-        }
+        containerColor = NeuBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -169,71 +144,89 @@ fun CustomersScreen(
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 1. Top Summary Banner: Total Debts & Customers KPI
-            Surface(
+            // Inline customer entry: fixed at the top, no dialog or floating button
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                shadowElevation = 1.dp
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    modifier = Modifier.weight(1.35f).height(42.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFFEFF6FF)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                tint = NavyPrimary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "حسابات العملاء والديون",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeuTextPrimary
-                            )
-                            Text(
-                                text = "${allCustomers.size.toEnglishString()} عميل مسجل • $inDebtCount عليهم ديون",
-                                fontSize = 11.sp,
-                                color = NeuTextSecondary
-                            )
-                        }
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "إجمالي الديون القائمة",
-                            fontSize = 10.sp,
-                            color = NeuTextSecondary
+                    Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
+                        if (newCustomerName.isEmpty()) Text("اسم العميل", fontSize = 12.sp, color = Color(0xFF64748B))
+                        BasicTextField(
+                            value = newCustomerName,
+                            onValueChange = { newCustomerName = it },
+                            singleLine = true,
+                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(NavyPrimary)
                         )
-                        Text(
-                            text = "${formatter.format(totalDebtAmount)} ${config?.currencySymbol ?: "ر.ي"}",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFDC2626)
+                    }
+                }
+                Surface(
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                ) {
+                    Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
+                        if (customerPhoneInput.isEmpty()) Text("الهاتف", fontSize = 12.sp, color = Color(0xFF64748B))
+                        BasicTextField(
+                            value = customerPhoneInput,
+                            onValueChange = { customerPhoneInput = it.toEnglishDigits() },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(NavyPrimary)
                         )
                     }
                 }
             }
+            Button(
+                onClick = {
+                    val cleanName = newCustomerName.trim()
+                    when {
+                        cleanName.isBlank() -> Toast.makeText(context, "يرجى كتابة اسم العميل أولاً", Toast.LENGTH_SHORT).show()
+                        allCustomers.any { it.name.equals(cleanName, ignoreCase = true) } ->
+                            Toast.makeText(context, "اسم العميل مسجل مسبقاً", Toast.LENGTH_SHORT).show()
+                        else -> {
+                            if (customerPhoneInput.isNotBlank()) viewModel.saveCustomerPhone(cleanName, customerPhoneInput)
+                            val initBal = initialBalanceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+                            if (initBal > 0) {
+                                if (initialBalanceType == "مدين (عليه دين)") {
+                                    viewModel.addCustomerReceipt(cleanName, -initBal, "رصيد افتتاحي (مدين)", notes)
+                                } else {
+                                    viewModel.addCustomerReceipt(cleanName, initBal, "رصيد افتتاحي (دائن)", notes)
+                                }
+                            } else {
+                                viewModel.addCustomerReceipt(cleanName, 0.0, "تسجيل عميل جديد", notes)
+                            }
+                            newCustomerName = ""
+                            customerPhoneInput = ""
+                            initialBalanceStr = ""
+                            notes = ""
+                            selectedCustomer = cleanName
+                            Toast.makeText(context, "تم تسجيل العميل", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(38.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NavyPrimary),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("إضافة العميل", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
 
-            // 2. Fixed Search Bar (أنيق وسهل الوصول)
+            // Compact fixed search bar
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -268,7 +261,7 @@ fun CustomersScreen(
                         decorationBox = { innerTextField ->
                             if (query.isEmpty()) {
                                 Text(
-                                    text = "ابحث بالاسم أو رقم الهاتف...",
+                                    text = "بحث بالاسم أو الهاتف",
                                     fontSize = 13.sp,
                                     color = Color(0xFF94A3B8)
                                 )
@@ -372,7 +365,7 @@ fun CustomersScreen(
                             color = NeuTextSecondary
                         )
                         Text(
-                            text = "اضغط على زر (عميل جديد) لإضافة عميل",
+                            text = "لا توجد بيانات لعرضها",
                             fontSize = 11.5.sp,
                             color = Color(0xFF94A3B8)
                         )
@@ -537,245 +530,10 @@ fun CustomersScreen(
                             }
                         }
                     }
-                    item {
-                        Spacer(Modifier.height(70.dp)) // Space for FAB
-                    }
                 }
             }
         }
     }
-
-    // --- ADD NEW CUSTOMER DIALOG ---
-    if (showAddCustomerDialog) {
-        var newCustomerName by remember { mutableStateOf("") }
-        var customerPhoneInput by remember { mutableStateOf("") }
-        var initialBalanceStr by remember { mutableStateOf("") }
-        var initialBalanceType by remember { mutableStateOf("مدين (عليه دين)") }
-        var notes by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showAddCustomerDialog = false },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(16.dp),
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFEFF6FF)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = NavyPrimary, modifier = Modifier.size(20.dp))
-                    }
-                    Text(
-                        text = "إضافة عميل جديد",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = NeuTextPrimary
-                    )
-                }
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val cleanName = newCustomerName.trim()
-                    val isDuplicateName = remember(cleanName, allCustomers) {
-                        cleanName.isNotBlank() && allCustomers.any { it.name.equals(cleanName, ignoreCase = true) }
-                    }
-
-                    Text("اسم العميل *", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFF8FAFC),
-                        border = BorderStroke(1.dp, if (isDuplicateName) Color(0xFFDC2626) else Color(0xFFCBD5E1))
-                    ) {
-                        BasicTextField(
-                            value = newCustomerName,
-                            onValueChange = { newCustomerName = it },
-                            singleLine = true,
-                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 9.dp),
-                            decorationBox = { inner ->
-                                if (newCustomerName.isEmpty()) {
-                                    Text("مثال: عبد الرحمن محمد", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                                }
-                                inner()
-                            }
-                        )
-                    }
-
-                    if (isDuplicateName) {
-                        Text(
-                            text = "⚠️ اسم العميل مسجل مسبقاً في النظام!",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFDC2626)
-                        )
-                    }
-
-                    Text("رقم الهاتف (اختياري)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFF8FAFC),
-                        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
-                    ) {
-                        BasicTextField(
-                            value = customerPhoneInput,
-                            onValueChange = { customerPhoneInput = it.toEnglishDigits() },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 9.dp),
-                            decorationBox = { inner ->
-                                if (customerPhoneInput.isEmpty()) {
-                                    Text("مثال: 771234567", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                                }
-                                inner()
-                            }
-                        )
-                    }
-
-                    Text("رصيد افتتاحي سابق (اختياري)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(38.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFFF8FAFC),
-                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                BasicTextField(
-                                    value = initialBalanceStr,
-                                    onValueChange = { initialBalanceStr = it.toEnglishDigits() },
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                    textStyle = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary),
-                                    decorationBox = { inner ->
-                                        if (initialBalanceStr.isEmpty()) {
-                                            Text("0.0", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                                        }
-                                        inner()
-                                    }
-                                )
-                            }
-                        }
-
-                        FilterChip(
-                            selected = initialBalanceType == "مدين (عليه دين)",
-                            onClick = { initialBalanceType = "مدين (عليه دين)" },
-                            label = { Text("عليه دين", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFFDC2626),
-                                selectedLabelColor = Color.White
-                            )
-                        )
-
-                        FilterChip(
-                            selected = initialBalanceType == "دائن (له رصيد)",
-                            onClick = { initialBalanceType = "دائن (له رصيد)" },
-                            label = { Text("له رصيد", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF059669),
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                    }
-
-                    Text("ملاحظات إضافية", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFF8FAFC),
-                        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
-                    ) {
-                        BasicTextField(
-                            value = notes,
-                            onValueChange = { notes = it },
-                            singleLine = true,
-                            textStyle = TextStyle(fontSize = 12.sp, color = NeuTextPrimary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            decorationBox = { inner ->
-                                if (notes.isEmpty()) {
-                                    Text("العنوان أو أي بيانات أخرى...", fontSize = 11.5.sp, color = Color(0xFF94A3B8))
-                                }
-                                inner()
-                            }
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val cleanName = newCustomerName.trim()
-                        if (cleanName.isNotBlank()) {
-                            val duplicate = allCustomers.any { it.name.equals(cleanName, ignoreCase = true) }
-                            if (duplicate) {
-                                Toast.makeText(context, "اسم العميل مسجل مسبقاً", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-
-                            // Save phone number if entered
-                            if (customerPhoneInput.isNotBlank()) {
-                                viewModel.saveCustomerPhone(cleanName, customerPhoneInput)
-                            }
-
-                            val initBal = initialBalanceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
-                            if (initBal > 0) {
-                                if (initialBalanceType == "مدين (عليه دين)") {
-                                    viewModel.addCustomerReceipt(cleanName, -initBal, "رصيد افتتاحي (مدين)", notes)
-                                } else {
-                                    viewModel.addCustomerReceipt(cleanName, initBal, "رصيد افتتاحي (دائن)", notes)
-                                }
-                            } else {
-                                viewModel.addCustomerReceipt(cleanName, 0.0, "تسجيل عميل جديد", notes)
-                            }
-                            showAddCustomerDialog = false
-                            selectedCustomer = cleanName
-                        } else {
-                            Toast.makeText(context, "يرجى كتابة اسم العميل أولاً", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyPrimary),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("حفظ العميل", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showAddCustomerDialog = false },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("إلغاء", color = NeuTextSecondary, fontSize = 12.sp)
-                }
-            }
-        )
-    }
-}
 
 private data class CustomerSummary(
     val name: String,
