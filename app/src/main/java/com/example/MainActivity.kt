@@ -160,7 +160,7 @@ private fun HomeDashboardScreen(
             DashboardAction("سجل الفواتير", "عرض وتعديل ومشاركة", AppIcons.History, NeuAccentBlue, onHistory, Modifier.weight(1f))
             DashboardAction("الأصناف والمخزون", "الأسعار والبحث", AppIcons.Category, NeuAccentBlue, onProducts, Modifier.weight(1f))
         }
-        Text("الأدوات والإعدادات", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text("الأدوات والإعدادات", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             DashboardAction("إعداد الطابعة", "حرارية 58 / 80 مم", AppIcons.Print, Color(0xFF475569), onPrinter, Modifier.weight(1f))
             DashboardAction("إعدادات المتجر", "النسخ الاحتياطي والبيانات", Icons.Default.Settings, Color(0xFF475569), onSettings, Modifier.weight(1f))
@@ -171,7 +171,7 @@ private fun HomeDashboardScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("أحدث الفواتير", color = NeuTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text("أحدث الفواتير", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             TextButton(onClick = onHistory, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
                 Text("عرض السجل", color = NeuAccentBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
