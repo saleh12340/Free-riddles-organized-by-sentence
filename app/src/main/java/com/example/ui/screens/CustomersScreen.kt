@@ -259,9 +259,14 @@ fun CustomersScreen(
                             val initBal = initialBalanceStr.toEnglishDigits().replace(",", "").toDoubleOrNull() ?: 0.0
                             if (initBal > 0) {
                                 if (initialBalanceType == "مدين (عليه دين)") {
-                                    viewModel.addCustomerReceipt(cleanName, -initBal, "رصيد افتتاحي (مدين)", notes)
+                                    // Store amounts as positive values; the debit flag determines balance direction.
+                                    viewModel.addCustomerReceipt(
+                                        cleanName, initBal, "رصيد افتتاحي (عليه)", notes, isDebit = true
+                                    )
                                 } else {
-                                    viewModel.addCustomerReceipt(cleanName, initBal, "رصيد افتتاحي (دائن)", notes)
+                                    viewModel.addCustomerReceipt(
+                                        cleanName, initBal, "رصيد افتتاحي (له)", notes, isDebit = false
+                                    )
                                 }
                             } else {
                                 viewModel.addCustomerReceipt(cleanName, 0.0, "تسجيل عميل جديد", notes)
