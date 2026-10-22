@@ -194,6 +194,59 @@ fun CustomersScreen(
                     }
                 }
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                ) {
+                    Box(
+                        Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (initialBalanceStr.isEmpty()) {
+                            Text("الرصيد الافتتاحي", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        BasicTextField(
+                            value = initialBalanceStr,
+                            onValueChange = { value ->
+                                initialBalanceStr = value.toEnglishDigits().filter { it.isDigit() || it == '.' || it == ',' }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(NavyPrimary)
+                        )
+                    }
+                }
+                FilterChip(
+                    selected = initialBalanceType == "مدين (عليه دين)",
+                    onClick = { initialBalanceType = "مدين (عليه دين)" },
+                    label = { Text("عليه", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFDC2626),
+                        selectedLabelColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                FilterChip(
+                    selected = initialBalanceType != "مدين (عليه دين)",
+                    onClick = { initialBalanceType = "دائن (له)" },
+                    label = { Text("له", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF059669),
+                        selectedLabelColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                )
+            }
+
             Button(
                 onClick = {
                     val cleanName = newCustomerName.trim()
@@ -203,7 +256,7 @@ fun CustomersScreen(
                             Toast.makeText(context, "اسم العميل مسجل مسبقاً", Toast.LENGTH_SHORT).show()
                         else -> {
                             if (customerPhoneInput.isNotBlank()) viewModel.saveCustomerPhone(cleanName, customerPhoneInput)
-                            val initBal = initialBalanceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+                            val initBal = initialBalanceStr.toEnglishDigits().replace(",", "").toDoubleOrNull() ?: 0.0
                             if (initBal > 0) {
                                 if (initialBalanceType == "مدين (عليه دين)") {
                                     viewModel.addCustomerReceipt(cleanName, -initBal, "رصيد افتتاحي (مدين)", notes)
