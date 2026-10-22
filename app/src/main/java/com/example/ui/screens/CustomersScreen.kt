@@ -6,6 +6,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -192,6 +194,59 @@ fun CustomersScreen(
                     }
                 }
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                ) {
+                    Box(
+                        Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (initialBalanceStr.isEmpty()) {
+                            Text("الرصيد الافتتاحي", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        BasicTextField(
+                            value = initialBalanceStr,
+                            onValueChange = { value ->
+                                initialBalanceStr = value.toEnglishDigits().filter { it.isDigit() || it == '.' || it == ',' }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(NavyPrimary)
+                        )
+                    }
+                }
+                FilterChip(
+                    selected = initialBalanceType == "مدين (عليه دين)",
+                    onClick = { initialBalanceType = "مدين (عليه دين)" },
+                    label = { Text("عليه", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFDC2626),
+                        selectedLabelColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                FilterChip(
+                    selected = initialBalanceType != "مدين (عليه دين)",
+                    onClick = { initialBalanceType = "دائن (له)" },
+                    label = { Text("له", fontSize = 11.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF059669),
+                        selectedLabelColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                )
+            }
+
             Button(
                 onClick = {
                     val cleanName = newCustomerName.trim()
@@ -201,12 +256,17 @@ fun CustomersScreen(
                             Toast.makeText(context, "اسم العميل مسجل مسبقاً", Toast.LENGTH_SHORT).show()
                         else -> {
                             if (customerPhoneInput.isNotBlank()) viewModel.saveCustomerPhone(cleanName, customerPhoneInput)
-                            val initBal = initialBalanceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+                            val initBal = initialBalanceStr.toEnglishDigits().replace(",", "").toDoubleOrNull() ?: 0.0
                             if (initBal > 0) {
                                 if (initialBalanceType == "مدين (عليه دين)") {
-                                    viewModel.addCustomerReceipt(cleanName, -initBal, "رصيد افتتاحي (مدين)", notes)
+                                    // Store amounts as positive values; the debit flag determines balance direction.
+                                    viewModel.addCustomerReceipt(
+                                        cleanName, initBal, "رصيد افتتاحي (عليه)", notes, isDebit = true
+                                    )
                                 } else {
-                                    viewModel.addCustomerReceipt(cleanName, initBal, "رصيد افتتاحي (دائن)", notes)
+                                    viewModel.addCustomerReceipt(
+                                        cleanName, initBal, "رصيد افتتاحي (له)", notes, isDebit = false
+                                    )
                                 }
                             } else {
                                 viewModel.addCustomerReceipt(cleanName, 0.0, "تسجيل عميل جديد", notes)
@@ -291,7 +351,9 @@ fun CustomersScreen(
 
             // 3. Filter Chips Row (تصفية سريعة)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

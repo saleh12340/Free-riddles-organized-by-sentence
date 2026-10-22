@@ -126,8 +126,14 @@ fun CustomerAccountStatementScreen(
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
 
     val totalInvoices = customerInvoices.sumOf { it.invoice.grandTotal }
-    val totalDebitReceipts = customerReceipts.filter { it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") }.sumOf { it.amount }
-    val totalCreditReceipts = customerReceipts.filter { !(it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين")) }.sumOf { it.amount }
+    // Older backups may contain a negative opening-debit amount and omit the isDebit flag.
+    // Normalize amount magnitude and infer direction from both current and legacy transaction labels.
+    val totalDebitReceipts = customerReceipts
+        .filter { it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") || it.paymentType.contains("مدين") }
+        .sumOf { kotlin.math.abs(it.amount) }
+    val totalCreditReceipts = customerReceipts
+        .filter { !(it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") || it.paymentType.contains("مدين")) }
+        .sumOf { kotlin.math.abs(it.amount) }
     val totalDebits = totalInvoices + totalDebitReceipts
     val totalCredits = totalCreditReceipts
     val remainingBalance = totalDebits - totalCredits
@@ -156,7 +162,7 @@ fun CustomerAccountStatementScreen(
                     date = rec.dateString,
                     title = rec.paymentType,
                     details = rec.notes.ifEmpty { if (isTxDebit) "قيد دين / على العميل" else "سند قبض / تسديد للعميل" },
-                    amount = rec.amount,
+                    amount = kotlin.math.abs(rec.amount),
                     isDebit = isTxDebit,
                     id = rec.receiptId,
                     rawType = if (isTxDebit) "receipt_debit" else "receipt_credit",
