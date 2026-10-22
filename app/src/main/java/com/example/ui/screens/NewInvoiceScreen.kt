@@ -111,7 +111,7 @@ fun NewInvoiceScreen(
                         Text(
                             text = "فاتورة #${viewModel.invoiceNumber} - ${storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" }}",
                             fontWeight = FontWeight.Bold,
-                            .fontSize = 14.5.sp,
+                            fontSize = 14.5.sp,
                             color = NeuTextPrimary
                         )
                     }
@@ -123,7 +123,7 @@ fun NewInvoiceScreen(
                         // 1. Quick Product Catalog Pick
                         NeuCircleButton(
                             onClick = { showProductPickerSheet = true },
-                            .size = 36.dp
+                            size = 36.dp
                         ) {
                             Icon(
                                 AppIcons.Category,
@@ -146,7 +146,7 @@ fun NewInvoiceScreen(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 is PrinterConnectionState.Connecting -> CircularProgressIndicator(
-                                    .modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
                                     color = NeuAccentBlue
                                 )
