@@ -66,158 +66,106 @@ private fun HomeDashboardScreen(
     onOpenCustomer: (String) -> Unit
 ) {
     val invoices by viewModel.allInvoices.collectAsState()
-    val products by viewModel.allProducts.collectAsState()
     val config by viewModel.storeConfig.collectAsState()
     val receipts by viewModel.allReceipts.collectAsState()
     val money = remember { DecimalFormat("#,##0.##") }
+    val currency = config?.currencySymbol ?: "ر.ي"
+    val debitTypes = remember { listOf("عليه", "قيد دين") }
     val customerRows = remember(invoices, receipts) {
         val names = (invoices.map { it.invoice.customerName.trim() } + receipts.map { it.customerName.trim() })
             .filter { it.isNotBlank() && it != "عميل نقدي" }.distinct()
         names.map { name ->
             val customerInvoices = invoices.filter { it.invoice.customerName.trim() == name }
             val customerReceipts = receipts.filter { it.customerName.trim() == name }
-            val debits = customerReceipts.filter { it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") }.sumOf { it.amount }
-            val credits = customerReceipts.filterNot { it.isDebit || it.paymentType.contains("عليه") || it.paymentType.contains("قيد دين") }.sumOf { it.amount }
-            Triple(name, customerInvoices.size + customerReceipts.size, customerInvoices.sumOf { it.invoice.grandTotal } + debits - credits)
+            val debits = customerReceipts.filter { it.isDebit || debitTypes.any { type -> it.paymentType.contains(type) } }.sumOf { it.amount }
+            val credits = customerReceipts.filterNot { it.isDebit || debitTypes.any { type -> it.paymentType.contains(type) } }.sumOf { it.amount }
+            val balance = customerInvoices.sumOf { it.invoice.grandTotal } + debits - credits
+            Triple(name, customerInvoices.size + customerReceipts.size, balance)
         }.sortedByDescending { it.third }
     }
-    val today = remember { SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date()) }
-    val todayInvoices = invoices.filter { it.invoice.dateString == today }
-    val todaySales = todayInvoices.sumOf { it.invoice.grandTotal }
-    val todayReceived = todayInvoices.sumOf { it.invoice.paidAmount } +
-        receipts.filter { it.dateString == today }.sumOf { it.amount }
+    val totalExports = remember(invoices) { invoices.sumOf { it.invoice.grandTotal } }
+    val totalImports = remember(invoices, receipts) {
+        invoices.sumOf { it.invoice.paidAmount } +
+            receipts.filterNot { it.isDebit || debitTypes.any { type -> it.paymentType.contains(type) } }.sumOf { it.amount }
+    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 7.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        NeuCard(
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color(0xFF1E3A8A),
-            shape = RoundedCornerShape(12.dp),
-            elevation = 2.dp,
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 7.dp)
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().background(Color(0xFF173B68))
+                .padding(horizontal = 9.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(Color(0xFF2563EB)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(AppIcons.Category, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text((config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" }, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
-                    Text("إدارة المبيعات والفواتير", fontSize = 9.sp, color = Color(0xFFDBEAFE), maxLines = 1)
-                }
-            }
-            Spacer(Modifier.height(5.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DashboardMetric("مبيعات اليوم", money.format(todaySales), config?.currencySymbol ?: "ر.ي", Modifier.weight(1f))
-                DashboardMetric("الواصل اليوم", money.format(todayReceived), config?.currencySymbol ?: "ر.ي", Modifier.weight(1f))
+            Icon(AppIcons.Store, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
+            Text(
+                (config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" },
+                color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Text("حسابات العملاء", color = Color(0xFFDBEAFE), fontSize = 9.sp, maxLines = 1)
+            TextButton(onClick = onCustomers, contentPadding = PaddingValues(horizontal = 5.dp, vertical = 0.dp),
+                modifier = Modifier.height(25.dp)) {
+                Text("الكل", color = Color.White, fontSize = 9.sp)
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardSmallMetric("الفواتير اليوم", todayInvoices.size.toString(), Modifier.weight(1f))
-            DashboardSmallMetric("إجمالي الفواتير", invoices.size.toString(), Modifier.weight(1f))
-            DashboardSmallMetric("الأصناف", products.size.toString(), Modifier.weight(1f))
-        }
-
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("العملاء وحساباتهم", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
-            TextButton(onClick = onCustomers, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("كل العملاء", fontSize = 10.sp) }
-        }
         if (customerRows.isEmpty()) {
-            Text("ستظهر حسابات العملاء هنا بعد تسجيل أول حركة", color = NeuTextSecondary, fontSize = 10.sp)
+            Box(Modifier.weight(1f).fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+                Text("لا توجد حسابات عملاء بعد", color = NeuTextSecondary, fontSize = 11.sp)
+            }
         } else {
-            customerRows.take(8).forEach { item ->
-                val (name, count, balance) = item
-                val owing = balance > 0.05
-                val tint = if (owing) Color(0xFFB91C1C) else Color(0xFF047857)
-                val rowBg = if (owing) Color(0xFFFFF1F2) else Color(0xFFECFDF5)
-                Row(
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(5.dp)).background(rowBg)
-                        .border(1.dp, if (owing) Color(0xFFFCA5A5) else Color(0xFF86EFAC), RoundedCornerShape(5.dp))
-                        .clickable { onOpenCustomer(name) }.padding(horizontal = 7.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(name, modifier = Modifier.weight(1.2f), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    Text("$count حركة", fontSize = 9.sp, color = NeuTextSecondary, maxLines = 1)
-                    Text(if (kotlin.math.abs(balance) < 0.05) "خالص" else "${money.format(kotlin.math.abs(balance))} ${if (owing) "عليه" else "له"}", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1)
+            androidx.compose.foundation.lazy.LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 5.dp, vertical = 3.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                items(customerRows.size) { index ->
+                    val (name, count, balance) = customerRows[index]
+                    val owing = balance > 0.05
+                    val balanced = kotlin.math.abs(balance) < 0.05
+                    val tint = when { balanced -> Color(0xFF475569); owing -> Color(0xFFB91C1C); else -> Color(0xFF047857) }
+                    val rowBg = when { balanced -> Color(0xFFF1F5F9); owing -> Color(0xFFFFF1F2); else -> Color(0xFFECFDF5) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(5.dp)).background(rowBg)
+                            .border(1.dp, when { balanced -> Color(0xFFCBD5E1); owing -> Color(0xFFFCA5A5); else -> Color(0xFF86EFAC) }, RoundedCornerShape(5.dp))
+                            .clickable { onOpenCustomer(name) }
+                            .padding(horizontal = 7.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text(name, modifier = Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            color = NeuTextPrimary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text("$count حركة", fontSize = 8.sp, color = NeuTextSecondary, maxLines = 1)
+                        Text(
+                            if (balanced) "خالص" else "${money.format(kotlin.math.abs(balance))} ${if (owing) "عليه" else "له"}",
+                            fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1
+                        )
+                    }
                 }
             }
-        }
-        Text("العمليات الرئيسية", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardAction("فاتورة جديدة", "بيع وتسجيل الواصل", AppIcons.Receipt, NeuAccentBlue, onNewInvoice, Modifier.weight(1f))
-            DashboardAction("حسابات العملاء", "الأرصدة والحركات", AppIcons.Person, NeuAccentBlue, onCustomers, Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardAction("سجل الفواتير", "عرض وتعديل ومشاركة", AppIcons.History, NeuAccentBlue, onHistory, Modifier.weight(1f))
-            DashboardAction("الأصناف والمخزون", "الأسعار والبحث", AppIcons.Category, NeuAccentBlue, onProducts, Modifier.weight(1f))
-        }
-        Text("الأدوات والإعدادات", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            DashboardAction("إعداد الطابعة", "حرارية 58 / 80 مم", AppIcons.Print, Color(0xFF475569), onPrinter, Modifier.weight(1f))
-            DashboardAction("إعدادات المتجر", "النسخ الاحتياطي والبيانات", Icons.Default.Settings, Color(0xFF475569), onSettings, Modifier.weight(1f))
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().background(Color(0xFFE8EEF5))
+                .border(width = 1.dp, color = Color(0xFFCBD5E1))
+                .padding(horizontal = 7.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("أحدث الفواتير", color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            TextButton(onClick = onHistory, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
-                Text("عرض السجل", color = NeuAccentBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(5.dp))
+                .background(Color(0xFFFFF1F2)).padding(horizontal = 7.dp, vertical = 3.dp)) {
+                Text("إجمالي الصادرات", fontSize = 8.sp, color = Color(0xFF9F1239), maxLines = 1)
+                Text("${money.format(totalExports)} $currency", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    color = Color(0xFF9F1239), maxLines = 1)
+            }
+            Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(5.dp))
+                .background(Color(0xFFECFDF5)).padding(horizontal = 7.dp, vertical = 3.dp)) {
+                Text("إجمالي الواردات", fontSize = 8.sp, color = Color(0xFF047857), maxLines = 1)
+                Text("${money.format(totalImports)} $currency", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    color = Color(0xFF047857), maxLines = 1)
             }
         }
-        val latestInvoices = invoices.sortedByDescending { it.invoice.createdAtTimestamp }.take(3)
-        if (latestInvoices.isEmpty()) {
-            NeuCard(
-                modifier = Modifier.fillMaxWidth(),
-                backgroundColor = NeuSurface,
-                elevation = 1.dp,
-                contentPadding = PaddingValues(12.dp)
-            ) {
-                Text("لا توجد فواتير بعد", color = NeuTextSecondary, fontSize = 13.sp)
-            }
-        } else {
-            latestInvoices.forEachIndexed { index, entry ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(NeuSurface)
-                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                        .clickable(onClick = onHistory)
-                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFEFF6FF)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(AppIcons.Receipt, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(19.dp))
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("فاتورة #" + entry.invoice.invoiceNumber, color = NeuTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(entry.invoice.customerName.ifBlank { "عميل نقدي" }, color = NeuTextSecondary, fontSize = 11.sp, maxLines = 1)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(money.format(entry.invoice.grandTotal), color = NeuTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text(entry.invoice.paymentType, color = if (entry.invoice.paymentType == "أجل") Color(0xFFD97706) else NeuSuccess, fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                    }
-                }
-                if (index < latestInvoices.lastIndex) Spacer(Modifier.height(5.dp))
-            }
-        }
-        Spacer(Modifier.height(8.dp))
     }
 }
 
