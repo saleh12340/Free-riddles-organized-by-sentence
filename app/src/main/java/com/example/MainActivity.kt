@@ -95,21 +95,21 @@ private fun HomeDashboardScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().background(Color(0xFF173B68))
-                .padding(horizontal = 9.dp, vertical = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(AppIcons.Store, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
+            Icon(AppIcons.Store, contentDescription = null, tint = Color.White, modifier = Modifier.size(21.dp))
             Text(
                 (config?.storeNameArabic ?: "بقالة العزي").ifBlank { "بقالة العزي" },
-                color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            Text("حسابات العملاء", color = Color(0xFFDBEAFE), fontSize = 9.sp, maxLines = 1)
-            TextButton(onClick = onCustomers, contentPadding = PaddingValues(horizontal = 5.dp, vertical = 0.dp),
-                modifier = Modifier.height(25.dp)) {
-                Text("الكل", color = Color.White, fontSize = 9.sp)
+            Text("حسابات العملاء", color = Color(0xFFDBEAFE), fontSize = 11.sp, maxLines = 1)
+            TextButton(onClick = onCustomers, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                modifier = Modifier.height(32.dp)) {
+                Text("الكل", color = Color.White, fontSize = 11.sp)
             }
         }
 
@@ -120,29 +120,29 @@ private fun HomeDashboardScreen(
         } else {
             androidx.compose.foundation.lazy.LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 5.dp, vertical = 3.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 items(customerRows.size) { index ->
                     val (name, count, balance) = customerRows[index]
                     val owing = balance > 0.05
                     val balanced = kotlin.math.abs(balance) < 0.05
                     val tint = when { balanced -> Color(0xFF475569); owing -> Color(0xFFB91C1C); else -> Color(0xFF047857) }
-                    val rowBg = when { balanced -> Color(0xFFF1F5F9); owing -> Color(0xFFFFF1F2); else -> Color(0xFFECFDF5) }
+                    val rowBg = Color(0xFF172E4D)
                     Row(
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(5.dp)).background(rowBg)
-                            .border(1.dp, when { balanced -> Color(0xFFCBD5E1); owing -> Color(0xFFFCA5A5); else -> Color(0xFF86EFAC) }, RoundedCornerShape(5.dp))
+                            .border(1.dp, when { balanced -> Color(0xFF64748B); owing -> Color(0xFFEF4444); else -> Color(0xFF10B981) }, RoundedCornerShape(8.dp))
                             .clickable { onOpenCustomer(name) }
-                            .padding(horizontal = 7.dp, vertical = 5.dp),
+                            .padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         Text(name, modifier = Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                            color = NeuTextPrimary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                        Text("$count حركة", fontSize = 8.sp, color = NeuTextSecondary, maxLines = 1)
+                            color = Color.White, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text("$count حركة", fontSize = 10.sp, color = Color(0xFFCBD5E1), maxLines = 1)
                         Text(
                             if (balanced) "خالص" else "${money.format(kotlin.math.abs(balance))} ${if (owing) "عليه" else "له"}",
-                            fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1
+                            fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (balanced) Color(0xFFE2E8F0) else if (owing) Color(0xFFFCA5A5) else Color(0xFF6EE7B7), maxLines = 1
                         )
                     }
                 }
@@ -152,20 +152,20 @@ private fun HomeDashboardScreen(
         Row(
             modifier = Modifier.fillMaxWidth().background(Color(0xFFE8EEF5))
                 .border(width = 1.dp, color = Color(0xFFCBD5E1))
-                .padding(horizontal = 7.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = 9.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(5.dp))
                 .background(Color(0xFFFFF1F2)).padding(horizontal = 7.dp, vertical = 3.dp)) {
-                Text("إجمالي الصادرات", fontSize = 8.sp, color = Color(0xFF9F1239), maxLines = 1)
-                Text("${money.format(totalExports)} $currency", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                Text("إجمالي الصادرات", fontSize = 10.sp, color = Color(0xFF9F1239), maxLines = 1)
+                Text("${money.format(totalExports)} $currency", fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     color = Color(0xFF9F1239), maxLines = 1)
             }
             Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(5.dp))
                 .background(Color(0xFFECFDF5)).padding(horizontal = 7.dp, vertical = 3.dp)) {
-                Text("إجمالي الواردات", fontSize = 8.sp, color = Color(0xFF047857), maxLines = 1)
-                Text("${money.format(totalImports)} $currency", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                Text("إجمالي الواردات", fontSize = 10.sp, color = Color(0xFF047857), maxLines = 1)
+                Text("${money.format(totalImports)} $currency", fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     color = Color(0xFF047857), maxLines = 1)
             }
         }
