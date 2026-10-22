@@ -97,13 +97,13 @@ fun NewInvoiceScreen(
                 color = NeuSurfaceRaised,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
                     .clip(RoundedCornerShape(14.dp))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -111,7 +111,7 @@ fun NewInvoiceScreen(
                         Text(
                             text = "فاتورة #${viewModel.invoiceNumber} - ${storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" }}",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            .fontSize = 14.5.sp,
                             color = NeuTextPrimary
                         )
                     }
@@ -123,13 +123,13 @@ fun NewInvoiceScreen(
                         // 1. Quick Product Catalog Pick
                         NeuCircleButton(
                             onClick = { showProductPickerSheet = true },
-                            size = 28.dp
+                            .size = 36.dp
                         ) {
                             Icon(
                                 AppIcons.Category,
                                 contentDescription = "دليل الأصناف",
                                 tint = NeuAccentBlue,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
@@ -146,7 +146,7 @@ fun NewInvoiceScreen(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 is PrinterConnectionState.Connecting -> CircularProgressIndicator(
-                                    modifier = Modifier.size(12.dp),
+                                    .modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
                                     color = NeuAccentBlue
                                 )
@@ -275,13 +275,13 @@ fun NewInvoiceScreen(
                         onClick = { viewModel.saveInvoiceToDatabase() },
                         modifier = Modifier
                             .weight(1f)
-                            .height(34.dp),
-                        shape = RoundedCornerShape(8.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(9.dp),
                         isPrimary = false
                     ) {
                         Icon(AppIcons.Save, contentDescription = null, modifier = Modifier.size(15.dp), tint = NeuTextPrimary)
                         Spacer(modifier = Modifier.width(3.dp))
-                        Text("حفظ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        Text("حفظ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
 
                     // 2. Thermal Print Button (Vibrant #0072ff Glow)
@@ -289,13 +289,13 @@ fun NewInvoiceScreen(
                         onClick = { showThermalPreviewDialog = true },
                         modifier = Modifier
                             .weight(1.3f)
-                            .height(34.dp),
-                        shape = RoundedCornerShape(8.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(9.dp),
                         isPrimary = true
                     ) {
                         Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(15.dp), tint = Color.White)
                         Spacer(modifier = Modifier.width(3.dp))
-                        Text("طباعة حرارية", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("طباعة حرارية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     // 3. Save / Share Image
@@ -303,13 +303,13 @@ fun NewInvoiceScreen(
                         onClick = { showPreviewDialog = true },
                         modifier = Modifier
                             .weight(1f)
-                            .height(34.dp),
-                        shape = RoundedCornerShape(8.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(9.dp),
                         isPrimary = false
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(15.dp), tint = NeuAccentBlue)
                         Spacer(modifier = Modifier.width(3.dp))
-                        Text("مشاركة", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        Text("مشاركة", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
                 }
             }
