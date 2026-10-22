@@ -35,6 +35,8 @@ import com.example.ui.viewmodels.InvoiceViewModel
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -63,7 +65,8 @@ private fun HomeDashboardScreen(
     onProducts: () -> Unit,
     onPrinter: () -> Unit,
     onSettings: () -> Unit,
-    onOpenCustomer: (String) -> Unit
+    onOpenCustomer: (String) -> Unit,
+    onQuickEntry: () -> Unit
 ) {
     val invoices by viewModel.allInvoices.collectAsState()
     val config by viewModel.storeConfig.collectAsState()
@@ -169,6 +172,112 @@ private fun HomeDashboardScreen(
     }
 }
 
+
+@Composable
+private fun QuickCustomerEntryScreen(
+    viewModel: InvoiceViewModel,
+    onBack: () -> Unit,
+    onOpenCustomer: (String) -> Unit
+) {
+    val invoices by viewModel.allInvoices.collectAsState()
+    val receipts by viewModel.allReceipts.collectAsState()
+    val names = remember(invoices, receipts) {
+        (invoices.map { it.invoice.customerName.trim() } + receipts.map { it.customerName.trim() })
+            .filter { it.isNotBlank() && it != "عميل نقدي" }.distinct().sorted()
+    }
+    var customer by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var details by remember { mutableStateOf("") }
+    var suggestionsVisible by remember { mutableStateOf(false) }
+    var pendingDebit by remember { mutableStateOf<Boolean?>(null) }
+    var error by remember { mutableStateOf("") }
+    val matches = remember(names, customer) {
+        if (customer.isBlank()) emptyList() else names.filter { it.contains(customer.trim(), ignoreCase = true) }.take(6)
+    }
+    val existing = names.any { it.equals(customer.trim(), ignoreCase = true) }
+    val config by viewModel.storeConfig.collectAsState()
+    Column(Modifier.fillMaxSize().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF173B68)).padding(7.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("إدخال عملية سريعة", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            IconButton(onClick = onBack, modifier = Modifier.size(27.dp)) { Icon(Icons.Default.Close, "إغلاق", tint = Color.White) }
+        }
+        OutlinedTextField(
+            value = customer, onValueChange = { customer = it; suggestionsVisible = true; error = "" },
+            modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("اسم العميل") },
+            placeholder = { Text("اكتب اسم العميل") }, shape = RoundedCornerShape(8.dp)
+        )
+        if (suggestionsVisible && matches.isNotEmpty()) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(Color.White).border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(7.dp))) {
+                matches.forEach { match ->
+                    Text(match, Modifier.fillMaxWidth().clickable { customer = match; suggestionsVisible = false; error = "" }.padding(9.dp), fontSize = 12.sp, color = NeuTextPrimary)
+                }
+            }
+        }
+        if (existing) {
+            TextButton(onClick = { onOpenCustomer(names.first { it.equals(customer.trim(), ignoreCase = true) }) }, contentPadding = PaddingValues(4.dp)) {
+                Text("عرض عمليات هذا العميل كاملة", fontSize = 10.sp)
+            }
+        }
+        OutlinedTextField(
+            value = amount, onValueChange = { value -> amount = value.filter { it.isDigit() || it == '.' || it == ',' }; error = "" },
+            modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("المبلغ") }, placeholder = { Text("0") }, shape = RoundedCornerShape(8.dp)
+        )
+        OutlinedTextField(
+            value = details, onValueChange = { details = it; error = "" },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp), label = { Text("تفاصيل العملية") },
+            placeholder = { Text("اكتب تفاصيل العملية") }, minLines = 3, maxLines = 5, shape = RoundedCornerShape(8.dp)
+        )
+        if (error.isNotBlank()) Text(error, color = Color(0xFFB91C1C), fontSize = 11.sp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                val value = amount.replace(",", "").toDoubleOrNull()
+                error = when {
+                    customer.trim().isBlank() -> "أدخل اسم العميل أولاً"
+                    value == null || value <= 0.0 -> "أدخل مبلغاً صحيحاً أكبر من صفر"
+                    details.trim().isBlank() -> "أدخل تفاصيل العملية"
+                    else -> ""
+                }
+                if (error.isBlank()) pendingDebit = true
+            }, modifier = Modifier.weight(1f).height(43.dp), shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB91C1C))) {
+                Text("عليه", fontWeight = FontWeight.Bold)
+            }
+            Button(onClick = {
+                val value = amount.replace(",", "").toDoubleOrNull()
+                error = when {
+                    customer.trim().isBlank() -> "أدخل اسم العميل أولاً"
+                    value == null || value <= 0.0 -> "أدخل مبلغاً صحيحاً أكبر من صفر"
+                    details.trim().isBlank() -> "أدخل تفاصيل العملية"
+                    else -> ""
+                }
+                if (error.isBlank()) pendingDebit = false
+            }, modifier = Modifier.weight(1f).height(43.dp), shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF047857))) {
+                Text("له", fontWeight = FontWeight.Bold)
+            }
+        }
+        Text("عليه: يضيف المبلغ إلى المديونية  •  له: يخصم المبلغ من المديونية", color = NeuTextSecondary, fontSize = 9.sp)
+    }
+    pendingDebit?.let { debit ->
+        val value = amount.replace(",", "").toDoubleOrNull() ?: 0.0
+        AlertDialog(
+            onDismissRequest = { pendingDebit = null },
+            title = { Text(if (existing) "تأكيد تسجيل العملية" else "العميل غير موجود") },
+            text = { Text(if (existing) "سيتم تسجيل مبلغ " + DecimalFormat("#,##0.##").format(value) + " " + (config?.currencySymbol ?: "ر.ي") + (if (debit) " على العميل " else " للعميل ") + customer.trim() + ". هل تريد المتابعة؟" else "العميل «" + customer.trim() + "» غير موجود. هل تريد إضافته إلى قائمة العملاء وتسجيل العملية؟") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.addCustomerReceipt(
+                        customerName = customer.trim(), amount = value,
+                        paymentType = if (debit) "قيد دين (عليه)" else "سند قبض/تسديد (له)",
+                        notes = details.trim(), isDebit = debit
+                    )
+                    pendingDebit = null
+                    onBack()
+                }) { Text(if (existing) "تأكيد التسجيل" else "إضافة العميل والتسجيل") }
+            },
+            dismissButton = { TextButton(onClick = { pendingDebit = null }) { Text("إلغاء") } }
+        )
+    }
+}
+
 @Composable
 private fun DashboardMetric(label: String, amount: String, currency: String, modifier: Modifier = Modifier) {
     Column(
@@ -248,6 +357,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
     val context = LocalContext.current
     var currentTab by remember { mutableStateOf(NavigationScreen.HOME) }
     var customerToOpen by remember { mutableStateOf<String?>(null) }
+    var showQuickEntry by remember { mutableStateOf(false) }
     val bottomScreens = listOf(
         NavigationScreen.HOME,
         NavigationScreen.NEW_INVOICE,
@@ -269,7 +379,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                 currentTab = NavigationScreen.HOME
             }
             NavigationScreen.HOME -> {
-                showExitDialog = true
+                if (showQuickEntry) showQuickEntry = false else showExitDialog = true
             }
         }
     }
@@ -284,6 +394,17 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
     Scaffold(
         containerColor = NeuBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (currentTab == NavigationScreen.HOME && !showQuickEntry) {
+                FloatingActionButton(
+                    onClick = { showQuickEntry = true },
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    containerColor = Color(0xFF2563EB),
+                    contentColor = Color.White,
+                    modifier = Modifier.size(52.dp)
+                ) { Icon(Icons.Default.Add, contentDescription = "إدخال عملية سريعة", modifier = Modifier.size(26.dp)) }
+            }
+        },
         bottomBar = {
             // Floating Clean Navigation Bar (5 Primary Tabs)
             Surface(
@@ -358,7 +479,17 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                 .padding(innerPadding)
         ) {
             when (currentTab) {
-                NavigationScreen.HOME -> HomeDashboardScreen(
+                NavigationScreen.HOME -> if (showQuickEntry) {
+                    QuickCustomerEntryScreen(
+                        viewModel = viewModel,
+                        onBack = { showQuickEntry = false },
+                        onOpenCustomer = { name ->
+                            customerToOpen = name
+                            showQuickEntry = false
+                            currentTab = NavigationScreen.CUSTOMERS
+                        }
+                    )
+                } else HomeDashboardScreen(
                     viewModel = viewModel,
                     onNewInvoice = { currentTab = NavigationScreen.NEW_INVOICE },
                     onCustomers = { currentTab = NavigationScreen.CUSTOMERS },
@@ -369,7 +500,8 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onOpenCustomer = { name ->
                         customerToOpen = name
                         currentTab = NavigationScreen.CUSTOMERS
-                    }
+                    },
+                    onQuickEntry = { showQuickEntry = true }
                 )
                 NavigationScreen.NEW_INVOICE -> NewInvoiceScreen(
                     viewModel = viewModel,
